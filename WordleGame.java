@@ -108,11 +108,8 @@ public class WordleGame {
     
         JCheckBox allowRepeatedLettersCheckBox = new JCheckBox("Wiederholte Buchstaben erlauben", allowRepeatedLetters); // Checkbox, um wiederholte Buchstaben zu erlauben
         allowRepeatedLettersCheckBox.addItemListener(e -> allowRepeatedLetters = allowRepeatedLettersCheckBox.isSelected()); // ItemListener für die Checkbox hinzufügen, um zu prüfen, ob wiederholte Buchstaben erlaubt sind
-        JCheckBox DebugCheckBox = new JCheckBox("Debug Modus", Debug); // Checkbox, um wiederholte Buchstaben zu erlauben
-        DebugCheckBox.addItemListener(e -> Debug = DebugCheckBox.isSelected()); // Überprüfung, ob der Debugmodus aktiviert oder deaktiviert ist
     
-        settingsFrame.add(allowRepeatedLettersCheckBox); // Checkbox wird dem Einstellungsmenü hinzugefügt, um wiederholte Buchstaben zu erlauben/deaktivieren
-        settingsFrame.add(DebugCheckBox); // Checkbox wird dem Einstellungsmenü hinzugefügt, um den Debugmodus zu aktivieren/deaktivieren
+        settingsFrame.add(allowRepeatedLettersCheckBox); // Checkbox wird dem Einstellungsmenü hinzugefügt
     
         settingsFrame.setVisible(true); // Das Einstellungsmenü wird sichtbar gemacht
     }
@@ -220,15 +217,7 @@ public class WordleGame {
     // Behandlung der Eingabe des Benutzers
     private void handleSubmit() {
         String guess = inputField.getText().toUpperCase(); // Eingabe des Benutzers wird in Großbuchstaben umgewandelt, dmait die Eingabe nicht auf Groß- und Kleinschreibung ankommt
-        
-        if (Debug == true)  { // Überprüfung, ob der Debugmodus aktiviert ist
-            if (guess.toUpperCase().equals("DEBUG"))    { // Überprüfung, ob der Benutzer "DEBUG" eingegeben hat
-                JOptionPane.showMessageDialog(frame, "Das Wort lautet: " + secretWord + "\nBereits geraten wurden: " + usedLetters); // Meldung, die das geheime Wort und die bereits geratenen Buchstaben anzeigt
-                inputField.setText(""); // Eingabefeld wird geleert
-                return;
-            }
-        }
-
+    
         // Überprüfung, ob das eingegebene Wort in der Wortliste enthalten ist
         if (!WORD_LIST.contains(guess.toLowerCase())) {
             JOptionPane.showMessageDialog(frame, "Das eingegebene Wort befindet sich nicht in der Wortliste. Bitte versuche es erneut mit einem anderen Wort."); // Meldung, dass das eingegebene Wort nicht in der Wortliste enthalten ist
@@ -345,12 +334,7 @@ public class WordleGame {
         if (response == JOptionPane.YES_OPTION && Debug == false) { // Prüfen, ob der Spieler ein neues Spiel starten möchte oder die Anwendung beenden möchte
             initializeGame(); // Neues Spiel starten
         } else {
-            if (response == JOptionPane.YES_OPTION && Debug == true)   {
-                showMainMenu();
-                frame.dispose();
-            } else  {
-                System.exit(0); // Anwendung beenden, wenn der Spieler kein neues Spiel starten möchte
-            }
+            System.exit(0); // Anwendung beenden, wenn der Spieler kein neues Spiel starten möchte
         }
     }
 
