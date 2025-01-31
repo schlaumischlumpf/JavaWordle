@@ -1,12 +1,12 @@
-import java.awt.*; // Import des Pakets "java.awt" für die grafische Benutzeroberfläche
-import java.awt.event.*; // Import des Pakets "java.awt.event" für die Event-Verarbeitung
-import java.io.*; // Import des Pakets "java.io" für die Ein- und Ausgabe
-import java.nio.file.*; // Import des Pakets "java.nio.file" für die Dateiverarbeitung
-import java.time.Duration; // Import des Pakets "java.time.Duration" für die Zeit
-import java.time.Instant; // Import des Pakets "java.time.Instant" für die Stoppuhr/den Timer
-import java.util.*; // Import aller Klassen aus dem Paket "java.util" für die allgemeine Verwendung
-import java.util.List; // Import der Klasse "List" aus dem Paket "java.util" für die Verwendung von Listen
-import javax.swing.*; // Import des Pakets "javax.swing" für die grafische Benutzeroberfläche mit Swing
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.nio.file.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.List;
+import javax.swing.*;
 
 /*
  * WordleGame.java von Moritz und Lennart
@@ -31,11 +31,12 @@ public class WordleGame {
     int gametype; // 1 = normaler Schwierigkeits, 2 = erhöhter Schwierigkeitsgrad, 3 = Challenge-Modus (noch nicht implementiert; Idee für zukünftige Erweiterungen)
     int AnzahlSpiele; // Counter, der die Anzahl der gespielten Spiele zählt
     long besteZeit = Long.MAX_VALUE; // Variable für die beste Zeit, die benötigt wurde, um das Wort zu erraten
+    boolean Debug; // Boolean um zu überprüfen ob der Debugmodus an ist
 
     // Liste der Wörter für das Spiel (initial leer, wird aus Datei geladen)
     private static List<String> WORD_LIST = new ArrayList<>();
 
-    private Set<Character> usedLetters = new HashSet<>(); // Set für die verwendeten Buchstaben
+    private final Set<Character> usedLetters = new HashSet<>(); // Set für die verwendeten Buchstaben
     private boolean allowRepeatedLetters = true; // Einstellung, ob wiederholte Buchstaben erlaubt sind
 
     // Das geheime Wort (wird intern zur Verarbeitung in Großbuchstaben verwendet)
@@ -50,7 +51,7 @@ public class WordleGame {
     private int currentRow = 0;
 
     // Grid für das Spielfeld
-    private final JTextField[][] grid = new JTextField[rows][COLUMNS]; // Das Feld wird als 6 x 5-Grid/Feld erstellt
+    private final JTextField[][] grid = new JTextField[rows][COLUMNS];
 
     // Eingabefeld für die Benutzereingabe
     private final JTextField inputField = new JTextField(); // Eingabefeld für die Benutzereingabe; der Benutzer kann hier sein Wort eingeben und mit der Eingabetaste bestätigen/auf den "Absenden"-Button klicken
@@ -62,7 +63,7 @@ public class WordleGame {
     private Instant startTime;
 
     // Pfad zur Datei mit den Wörtern
-    private static final String filePath = "E:/Java/Wordle/src/Wortliste.txt"; // Pfad bitte genau anpassen, damit das Programm immer reibungslos funktioniert (z.B. C:/Users/Name/Desktop/Wortliste.txt)
+    private static final String filePath = "Wortliste.txt"; // Pfad bitte genau anpassen, damit das Programm immer reibungslos funktioniert (z.B. C:/Users/Name/Desktop/Wortliste.txt)
         
     // JFrame für das Hauptmenü
     private JFrame mainMenuFrame;
@@ -107,8 +108,11 @@ public class WordleGame {
     
         JCheckBox allowRepeatedLettersCheckBox = new JCheckBox("Wiederholte Buchstaben erlauben", allowRepeatedLetters); // Checkbox, um wiederholte Buchstaben zu erlauben
         allowRepeatedLettersCheckBox.addItemListener(e -> allowRepeatedLetters = allowRepeatedLettersCheckBox.isSelected()); // ItemListener für die Checkbox hinzufügen, um zu prüfen, ob wiederholte Buchstaben erlaubt sind
+        JCheckBox DebugCheckBox = new JCheckBox("Debug Modus", Debug); // Checkbox, um wiederholte Buchstaben zu erlauben
+        DebugCheckBox.addItemListener(e -> Debug = DebugCheckBox.isSelected()); // Überprüfung, ob der Debugmodus aktiviert oder deaktiviert ist
     
-        settingsFrame.add(allowRepeatedLettersCheckBox); // Checkbox wird dem Einstellungsmenü hinzugefügt
+        settingsFrame.add(allowRepeatedLettersCheckBox); // Checkbox wird dem Einstellungsmenü hinzugefügt, um wiederholte Buchstaben zu erlauben/deaktivieren
+        settingsFrame.add(DebugCheckBox); // Checkbox wird dem Einstellungsmenü hinzugefügt, um den Debugmodus zu aktivieren/deaktivieren
     
         settingsFrame.setVisible(true); // Das Einstellungsmenü wird sichtbar gemacht
     }
@@ -216,7 +220,15 @@ public class WordleGame {
     // Behandlung der Eingabe des Benutzers
     private void handleSubmit() {
         String guess = inputField.getText().toUpperCase(); // Eingabe des Benutzers wird in Großbuchstaben umgewandelt, dmait die Eingabe nicht auf Groß- und Kleinschreibung ankommt
-    
+        
+        if (Debug == true)  { // Überprüfung, ob der Debugmodus aktiviert ist
+            if (guess.toUpperCase().equals("DEBUG"))    { // Überprüfung, ob der Benutzer "DEBUG" eingegeben hat
+                JOptionPane.showMessageDialog(frame, "Das Wort lautet: " + secretWord + "\nBereits geraten wurden: " + usedLetters); // Meldung, die das geheime Wort und die bereits geratenen Buchstaben anzeigt
+                inputField.setText(""); // Eingabefeld wird geleert
+                return;
+            }
+        }
+
         // Überprüfung, ob das eingegebene Wort in der Wortliste enthalten ist
         if (!WORD_LIST.contains(guess.toLowerCase())) {
             JOptionPane.showMessageDialog(frame, "Das eingegebene Wort befindet sich nicht in der Wortliste. Bitte versuche es erneut mit einem anderen Wort."); // Meldung, dass das eingegebene Wort nicht in der Wortliste enthalten ist
@@ -247,7 +259,7 @@ public class WordleGame {
                 JOptionPane.showMessageDialog(frame, "Das Wort darf keine Umlaute enthalten."); // Meldung, dass das Wort keine Umlaute/Sonderlaute enthalten darf
                 return;
             }
-            if (!allowRepeatedLetters && usedLetters.contains(guess.charAt(i))) { // Überprüfung, ob wiederholte Buchstaben erlaubt sind und ob der Buchstabe bereits verwendet wurde
+            if ((!allowRepeatedLetters || gametype == 2) && usedLetters.contains(guess.charAt(i))) { // Überprüfung, ob wiederholte Buchstaben erlaubt sind und ob der Buchstabe bereits verwendet wurde; zusätzlich wird überprüft, ob der erhöhte Schwierigkeitsgrad aktiviert ist
                 JOptionPane.showMessageDialog(frame, "Der Buchstabe '" + guess.charAt(i) + "' wurde bereits verwendet. Bitte versuche es mit einem anderen Buchstaben."); // Meldung, dass der Buchstabe bereits verwendet wurde und ein anderer Buchstabe eingegeben werden soll
                 return; // Die Methode wird beendet, wenn der Buchstabe bereits verwendet wurde und ein anderer Buchstabe eingegeben werden soll
             }
@@ -321,16 +333,24 @@ public class WordleGame {
         Instant endTime = Instant.now(); // Benötigte Zeit wird gestoppt
         Duration duration = Duration.between(startTime, endTime); // Berechnung der Spieldauer
         long seconds = duration.getSeconds(); // Umwandlung der Dauer in Sekunden
-        if (besteZeit > seconds) { // Prüfen, ob die benötigte Zeit besser ist als die bisher beste Zeit
+        if (besteZeit > seconds && Debug == false) { // Prüfen, ob die benötigte Zeit besser ist als die bisher beste Zeit
             besteZeit = seconds; // Wenn ja, wird die benötigte Zeit wird als beste Zeit gespeichert
         }
-        AnzahlSpiele++; // Die Anzahl der gespielten Spiele wird um 1 inkrementiert
+
+        if (Debug == false) {
+            AnzahlSpiele++; // Die Anzahl der gespielten Spiele wird um 1 inkrementiert
+        }
 
         int response = JOptionPane.showConfirmDialog(frame, message + "\nBenötigte Zeit: " + seconds + " Sekunden.\nDeine beste Zeit war: " + besteZeit + " Sekunden\nDu hast bereits " + AnzahlSpiele + " Spiele gespielt.\nMöchtest du erneut spielen?", "Spielende", JOptionPane.YES_NO_OPTION); // Meldung, die anzeigt, ob das Spiel gewonnen oder verloren wurde, die benötigte Zeit, die beste Zeit, die Anzahl der gespielten Spiele und die Option, ein neues Spiel zu starten
-        if (response == JOptionPane.YES_OPTION) { // Prüfen, ob der Spieler ein neues Spiel starten möchte oder die Anwendung beenden möchte
+        if (response == JOptionPane.YES_OPTION && Debug == false) { // Prüfen, ob der Spieler ein neues Spiel starten möchte oder die Anwendung beenden möchte
             initializeGame(); // Neues Spiel starten
         } else {
-            System.exit(0); // Anwendung beenden, wenn der Spieler kein neues Spiel starten möchte
+            if (response == JOptionPane.YES_OPTION && Debug == true)   {
+                showMainMenu();
+                frame.dispose();
+            } else  {
+                System.exit(0); // Anwendung beenden, wenn der Spieler kein neues Spiel starten möchte
+            }
         }
     }
 
