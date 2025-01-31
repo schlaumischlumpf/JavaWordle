@@ -221,32 +221,16 @@ public class WordleGame {
     private void handleSubmit() {
         String guess = inputField.getText().toUpperCase(); // Eingabe des Benutzers wird in Großbuchstaben umgewandelt, dmait die Eingabe nicht auf Groß- und Kleinschreibung ankommt
         
-        // Debugs
-
-        if (Debug == true)  {
-            if (guess.toUpperCase().equals("DEBUG"))    {   //Ausgabe des Wortes
-                JOptionPane.showMessageDialog(frame, "Das Wort lautet: " + secretWord + "\nBereits geraten wurden: " + usedLetters + "\nGame Type: " + gametype);
+        if (Debug == true)  {    // Überprüfe ob der Debugmodus an ist
+            if (guess.toUpperCase().equals("DEBUG"))    {    // Überprüfe ob die Eingabe "DEBUG" ist
+                JOptionPane.showMessageDialog(frame, "Das Wort lautet: " + secretWord + "\nBereits geraten wurden: " + usedLetters); // Gibt das Wort und die bereits geratenen Buchstaben
                 inputField.setText("");
-                return;
-            }
-            if (guess.toUpperCase().equals("MENU"))    {    //Zurück zum Menu
-                endGame("Spiel durch DEBUG beendet");
-                return;
-            }
-            if (guess.toUpperCase().equals("RESTART")) {    // Neustart des aktuellen Spiels mit neuem Wort
-                initializeGame();
-                JOptionPane.showMessageDialog(frame, "Neues Wort wurde gewählt");
-                return;
-            }
-            if (guess.toUpperCase().equals("DEBUG RESTART")) {  // Neustart des aktuellen Spiels mit neuem Wort, welches dem Spieler auch angezeigt wird
-                initializeGame();
-                JOptionPane.showMessageDialog(frame, "Neues Wort wurde gewählt.\nDas neue Wort ist: " + secretWord);
                 return;
             }
         }
 
         // Überprüfung, ob das eingegebene Wort in der Wortliste enthalten ist
-        if (!WORD_LIST.contains(guess.toLowerCase()) && !guess.toLowerCase().equals(secretWord.toLowerCase())) {
+        if (!WORD_LIST.contains(guess.toLowerCase())) {
             JOptionPane.showMessageDialog(frame, "Das eingegebene Wort befindet sich nicht in der Wortliste. Bitte versuche es erneut mit einem anderen Wort."); // Meldung, dass das eingegebene Wort nicht in der Wortliste enthalten ist
             return; // Die Methode wird beendet, wenn das eingegebene Wort nicht in der Wortliste enthalten ist
         }
@@ -275,9 +259,20 @@ public class WordleGame {
                 JOptionPane.showMessageDialog(frame, "Das Wort darf keine Umlaute enthalten."); // Meldung, dass das Wort keine Umlaute/Sonderlaute enthalten darf
                 return;
             }
-            if (!allowRepeatedLetters && usedLetters.contains(guess.charAt(i))) { // Überprüfung, ob wiederholte Buchstaben erlaubt sind und ob der Buchstabe bereits verwendet wurde
-                JOptionPane.showMessageDialog(frame, "Der Buchstabe '" + guess.charAt(i) + "' wurde bereits verwendet. Bitte versuche es mit einem anderen Buchstaben."); // Meldung, dass der Buchstabe bereits verwendet wurde und ein anderer Buchstabe eingegeben werden soll
-                return; // Die Methode wird beendet, wenn der Buchstabe bereits verwendet wurde und ein anderer Buchstabe eingegeben werden soll
+            StringBuilder usedChars = new StringBuilder(); // StringBuilder für die bereits verwendeten Buchstaben
+            for (int j = 0; j < guess.length(); j++) { // Schleife, die die Buchstaben des eingegebenen Wortes durchläuft
+                if ((!allowRepeatedLetters || gametype == 2) && usedLetters.contains(guess.charAt(j))) { // Überprüfung, ob wiederholte Buchstaben erlaubt sind und ob der Buchstabe bereits verwendet wurde
+                    usedChars.append(guess.charAt(j)).append(" "); // Hinzufügen des bereits verwendeten Buchstabens zum StringBuilder
+                }
+            }
+            if (usedChars.length() > 0) { // Überprüfung, ob bereits verwendete Buchstaben gefunden wurden
+                String usedCharsString = usedChars.toString().trim();
+                if (usedCharsString.length() == 1) {
+                    JOptionPane.showMessageDialog(frame, "Der Buchstabe '" + usedCharsString + "' wurde bereits verwendet. Versuche es erneut."); // Meldung, dass der Buchstabe bereits verwendet wurde und ein anderer Buchstabe eingegeben werden soll
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Die Buchstaben '" + usedCharsString.replace(" ", ", ") + "' wurden bereits verwendet. Versuche es erneut."); // Meldung, dass die Buchstaben bereits verwendet wurden und andere Buchstaben eingegeben werden sollen
+                }
+                return; // Die Methode wird beendet, wenn Buchstaben bereits verwendet wurden und andere Buchstaben eingegeben werden sollen
             }
         }
     
@@ -362,7 +357,7 @@ public class WordleGame {
             initializeGame(); // Neues Spiel starten
         } else {
             if (response == JOptionPane.YES_OPTION && Debug == true)   {
-                showMainMenu();
+                showMainMenu();    // Zurück zum Mainmenu sollte Debugmodus an sein
                 frame.dispose();
             } else  {
                 System.exit(0); // Anwendung beenden, wenn der Spieler kein neues Spiel starten möchte
