@@ -219,20 +219,14 @@ public class WordleGame {
 
     // Behandlung der Eingabe des Benutzers
     private void handleSubmit() {
-        String guess = inputField.getText().toUpperCase(); // Eingabe des Benutzers wird in Großbuchstaben umgewandelt, dmait die Eingabe nicht auf Groß- und Kleinschreibung ankommt
+        String guess = inputField.getText().toUpperCase(); // Eingabe des Benutzers wird in Großbuchstaben umgewandelt, damit die Eingabe nicht auf Groß- und Kleinschreibung ankommt
         
         if (Debug == true)  {    // Überprüfe ob der Debugmodus an ist
-            if (guess.toUpperCase().equals("DEBUG"))    {    // Überprüfe ob die Eingabe "DEBUG" ist
+            if (guess.toUpperCase().equals("#DEBUG"))    {    // Überprüfe ob die Eingabe "DEBUG" ist
                 JOptionPane.showMessageDialog(frame, "Das Wort lautet: " + secretWord + "\nBereits geraten wurden: " + usedLetters); // Gibt das Wort und die bereits geratenen Buchstaben
                 inputField.setText("");
                 return;
             }
-        }
-
-        // Überprüfung, ob das eingegebene Wort in der Wortliste enthalten ist
-        if (!WORD_LIST.contains(guess.toLowerCase())) {
-            JOptionPane.showMessageDialog(frame, "Das eingegebene Wort befindet sich nicht in der Wortliste. Bitte versuche es erneut mit einem anderen Wort."); // Meldung, dass das eingegebene Wort nicht in der Wortliste enthalten ist
-            return; // Die Methode wird beendet, wenn das eingegebene Wort nicht in der Wortliste enthalten ist
         }
     
         // Prüfen, ob die Eingabe die richtige Länge hat
