@@ -51,8 +51,8 @@ public class WordleGame {
     private int currentRow = 0;
 
     // Grid für das Spielfeld
-    private final JTextField[][] grid = new JTextField[rows][COLUMNS];
-
+    private JTextField[][] grid = new JTextField[rows][COLUMNS];
+    
     // Eingabefeld für die Benutzereingabe
     private final JTextField inputField = new JTextField(); // Eingabefeld für die Benutzereingabe; der Benutzer kann hier sein Wort eingeben und mit der Eingabetaste bestätigen/auf den "Absenden"-Button klicken
 
@@ -117,105 +117,109 @@ public class WordleGame {
         settingsFrame.setVisible(true); // Das Einstellungsmenü wird sichtbar gemacht
     }
 
-    // Methode zum Starten des Wordle-Spiels
-    private void startWordleGame() {
-        // Schließe das Hauptmenü
-        mainMenuFrame.dispose(); // Das sichtbare Haupmenü-Fenster wird geschlossen
-        gametype = 1; // Das normale Wordle wird gestartet, daher wird der Schwierigkeitsgrad auf 1 gesetzt
-        
-        // Starte das Wordle-Spiel
-        initializeGame();
-    }
-
-    private void startWordleGame_2() { // Methode, um das Wordle-Spiel mit erhöhter Schwierigkeit zu starten
-        mainMenuFrame.dispose(); // Das sichtbare Haupmenü-Fenster wird geschlossen
-        gametype = 2; // Der Schwierigkeitsgrad wird auf 2 gesetzt, um das Wordle mit erhöhter Schwierigkeit auszuführen
-        rows = 4; // Die Anzahl der Zeilen wird auf 4 gesetzt, um die Anzahl der Versuche zu reduzieren, was die erhöhte Schwierigkeit ausmacht
-        initializeGame();
-    }
-
-    /*
-     * Die Methode, um den dritten Modus - also den Challenge-Modus - zu starten, wurde zum jetztigen Zeitpunkt noch nicht implementiert, soll aber demnächst folgen.
-     */
-    
-    // Initialisierung des Spiels
-    private void initializeGame() { // Methode die das Spiel initialisiert
-        loadWordsFromFile();  // Laden der Wörter aus der Wörterliste
-        if (!WORD_LIST.isEmpty())  { // if-Fallunterscheidung, die prüft, ob die Wortliste nicht leer ist
-            secretWord = WORD_LIST.get(new Random().nextInt(WORD_LIST.size())).toUpperCase(); // sollte die Wortliste nicht leer sein, wird ein zufälliges Wort aus der Liste ausgewählt und in Großbuchstaben umgewandelt
+        // Methode zum Starten des Wordle-Spiels
+        private void startWordleGame() {
+            // Schließe das Hauptmenü
+            mainMenuFrame.dispose(); // Das sichtbare Haupmenü-Fenster wird geschlossen
+            gametype = 1; // Das normale Wordle wird gestartet, daher wird der Schwierigkeitsgrad auf 1 gesetzt
+            
+            // Starte das Wordle-Spiel
+            initializeGame();
         }
-        currentRow = 0; // der aktuelle Spielzug wird auf 0 gesetzt, das heißt, dass der Spieler noch keinen Zug gemacht hat und sich in der ersten Zeile befindet.
-
-        // Erstellen und Einrichten des Hauptfensters für das Spiel
-        if (frame == null) { // if-Fallunterscheidung, die prüft, ob das Fenster noch nicht erstellt wurde
-            frame = new JFrame("Wordle Spiel"); // Titel des nun angezeigten Fensters wird auf "Wordle Spiel" gesetzt
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Das Fenster wird geschlossen, sollte der "X"-Button oben rechts gedrückt werden
-            frame.setSize(500, 700); // Größe des Fensters wird auf 500 x 700 Pixel gesetzt
-
-            JPanel mainPanel = new JPanel(); // Erstellen eines neuen Panels, das als Hauptpanel für das Fenster dient
-            mainPanel.setLayout(new BorderLayout(10, 10)); // Layout des Hauptpanels wird auf ein BorderLayout mit 10 Pixel Abstand zwischen den Zellen gesetzt
-            mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Ein leerer Rand wird um das Hauptpanel erstellt
-
-            // Grid-Panel für das Spielfeld
-            JPanel gridPanel = new JPanel(); // Erstellen eines neuen Panels, das als Grid-Panel für das Spielfeld dient
-            gridPanel.setLayout(new GridLayout(rows, COLUMNS, 10, 10)); // Das Layout des Grid-Panels wird auf ein 6 x 5-Grid/Feld mit 10 Pixel Abstand zwischen den Zellen gesetzt
-
-            // Initialisieren des Grids
-            for (int i = 0; i < rows; i++) { // Zählschleife, die die Anzahl der Reihen durchläuft
-                for (int j = 0; j < COLUMNS; j++) { // Zählschleife zählt die Anzahl der Spalten durch
-                    grid[i][j] = new JTextField(); // Ein neues JTextField wird für das Grid/Feld erstellt
-                    grid[i][j].setEditable(false); // Das JTextField wird auf "nicht-editierbar" gesetzt, da man nicht in das Feld schreiben können soll
-                    grid[i][j].setHorizontalAlignment(JTextField.CENTER); // Der Text im JTextField wird horizontal zentriert
-                    grid[i][j].setFont(new Font("Arial", Font.BOLD, 18)); // Die Schriftart wird auf "Arial" gesetzt, mit der Schriftgröße 18pt und in Fett
-                    grid[i][j].setFocusable(false); // Das JTextField wird auf "nicht-fokussierbar" gesetzt, da es nicht fokussiert werden soll
-                    grid[i][j].setBackground(Color.WHITE); // Die Hintergrundfarbe des Feldes wird auf Weiß gesetzt
-                    grid[i][j].setText(""); // Der Text im Feld wird auf leer gesetzt
-                    gridPanel.add(grid[i][j]); // Das JTextField wird dem Grid-Panel hinzugefügt
-                }
+    
+        private void startWordleGame_2() { // Methode, um das Wordle-Spiel mit erhöhter Schwierigkeit zu starten
+            mainMenuFrame.dispose(); // Das sichtbare Haupmenü-Fenster wird geschlossen
+            gametype = 2; // Der Schwierigkeitsgrad wird auf 2 gesetzt, um das Wordle mit erhöhter Schwierigkeit auszuführen
+            rows = 4; // Die Anzahl der Zeilen wird auf 4 gesetzt, um die Anzahl der Versuche zu reduzieren, was die erhöhte Schwierigkeit ausmacht
+            initializeGame();
+        }
+    
+        /*
+         * Die Methode, um den dritten Modus - also den Challenge-Modus - zu starten, wurde zum jetztigen Zeitpunkt noch nicht implementiert, soll aber demnächst folgen.
+         */
+        
+        // Initialisierung des Spiels
+        private void initializeGame() { // Methode die das Spiel initialisiert
+            loadWordsFromFile();  // Laden der Wörter aus der Wörterliste
+            if (!WORD_LIST.isEmpty())  { // if-Fallunterscheidung, die prüft, ob die Wortliste nicht leer ist
+                secretWord = WORD_LIST.get(new Random().nextInt(WORD_LIST.size())).toUpperCase(); // sollte die Wortliste nicht leer sein, wird ein zufälliges Wort aus der Liste ausgewählt und in Großbuchstaben umgewandelt
             }
+            currentRow = 0; // der aktuelle Spielzug wird auf 0 gesetzt, das heißt, dass der Spieler noch keinen Zug gemacht hat und sich in der ersten Zeile befindet.
+    
+            // Erstellen und Einrichten des Hauptfensters für das Spiel
+            if (frame == null) { // if-Fallunterscheidung, die prüft, ob das Fenster noch nicht erstellt wurde
+                frame = new JFrame("Wordle Spiel"); // Titel des nun angezeigten Fensters wird auf "Wordle Spiel" gesetzt
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Das Fenster wird geschlossen, sollte der "X"-Button oben rechts gedrückt werden
+                int height_of_frame = rows * 100 + 100;
+                frame.setSize(500, height_of_frame); // Größe des Fensters wird auf 500 x 700 Pixel gesetzt
+    
+    
+                JPanel mainPanel = new JPanel(); // Erstellen eines neuen Panels, das als Hauptpanel für das Fenster dient
+                mainPanel.setLayout(new BorderLayout(10, 10)); // Layout des Hauptpanels wird auf ein BorderLayout mit 10 Pixel Abstand zwischen den Zellen gesetzt
+                mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Ein leerer Rand wird um das Hauptpanel erstellt
+    
+                // Grid-Panel für das Spielfeld
+                JPanel gridPanel = new JPanel(); // Erstellen eines neuen Panels, das als Grid-Panel für das Spielfeld dient
+                gridPanel.setLayout(new GridLayout(rows, COLUMNS, 10, 10)); // Das Layout des Grid-Panels wird auf ein 6 x 5-Grid/Feld mit 10 Pixel Abstand zwischen den Zellen gesetzt
+    
+                // Initialisieren des Grids
+                grid = new JTextField[rows][COLUMNS]; // Reinitialize the grid array with the correct number of rows
 
-            // Panel für die Benutzereingabe
-            JPanel inputPanel = new JPanel(); // Erstellen eines neuen Panels, das als Eingabepanel für den Benutzer dient
-            inputPanel.setLayout(new BorderLayout(10, 10)); // Das Layout des Eingabepanels wird auf ein BorderLayout mit 10 Pixel Abstand zwischen den Zellen gesetzt
-
-            inputField.setFont(new Font("Arial", Font.PLAIN, 18)); // Die Schriftart des Eingabefeldes wird auf "Arial" gesetzt, mit der Schriftgröße 18pt
-            inputPanel.add(inputField, BorderLayout.CENTER); // Das Eingabefeld wird dem Eingabepanel hinzugefügt; es wird in der Mitte des Panels platziert
-
-            JButton submitButton = new JButton("Eingabe"); // Erstellen eines neuen Buttons mit der Beschriftung "Eingabe"
-            inputPanel.add(submitButton, BorderLayout.EAST); // Der Button wird dem Eingabepanel hinzugefügt; er wird rechts im Panel platziert
-
-            mainPanel.add(gridPanel, BorderLayout.CENTER); // Das Grid/Feld-Panel wird dem Hauptpanel hinzugefügt und in die Mitte des Panels platziert
-            mainPanel.add(inputPanel, BorderLayout.SOUTH); // Das Eingabepanel für das Wort wird dem Hauptpanel hinzugefügt und unten im Panel platziert
-
-            frame.add(mainPanel); // Das Hauptpanel wird dem Fenster hinzugefügt
-
-            // ActionListener für den Submit-Button hinzufügen
-            submitButton.addActionListener(e -> handleSubmit()); // ActionListener für den Submit-Button hinzufügen, um die Eingabe des Benutzers zu verarbeiten, wenn der Button gedrückt wird
-
-            // KeyListener für die Eingabetaste hinzufügen
-            inputField.addKeyListener(new KeyAdapter() { // KeyListener soll genutzt werden, um die Eingabe des Benutzers zu verarbeiten, sobald er die Eingabetaste drückt
-                @Override
-                public void keyPressed(KeyEvent e) { // Methode, die prüft, ob eine Taste gedrückt wurde
-                    if (e.getKeyCode() == KeyEvent.VK_ENTER) { // if-Fallunterscheidung, die prüft, ob die Eingabetaste gedrückt wurde
-                        handleSubmit(); // wenn die Eingabetaste gedrückt wurde, wird die Methode "handleSubmit()" aufgerufen, um die Eingabe des Benutzers zu verarbeiten
+                for (int i = 0; i < rows; i++) { // Zählschleife, die die Anzahl der Reihen durchläuft
+                    for (int j = 0; j < COLUMNS; j++) { // Zählschleife zählt die Anzahl der Spalten durch
+                        grid[i][j] = new JTextField(); // Ein neues JTextField wird für das Grid/Feld erstellt
+                        grid[i][j].setEditable(false); // Das JTextField wird auf "nicht-editierbar" gesetzt, da man nicht in das Feld schreiben können soll
+                        grid[i][j].setHorizontalAlignment(JTextField.CENTER); // Der Text im JTextField wird horizontal zentriert
+                        grid[i][j].setFont(new Font("Arial", Font.BOLD, 18)); // Die Schriftart wird auf "Arial" gesetzt, mit der Schriftgröße 18pt und in Fett
+                        grid[i][j].setFocusable(false); // Das JTextField wird auf "nicht-fokussierbar" gesetzt, da es nicht fokussiert werden soll
+                        grid[i][j].setBackground(Color.WHITE); // Die Hintergrundfarbe des Feldes wird auf Weiß gesetzt
+                        grid[i][j].setText(""); // Der Text im Feld wird auf leer gesetzt
+                        gridPanel.add(grid[i][j]); // Das JTextField wird dem Grid-Panel hinzugefügt
                     }
                 }
-            });
-        } else { // sollte die Wortliste leer sein, wird eine Meldung angezeigt, dass keine Wörter gefunden wurden
-            // Zurücksetzen des Grids und des Eingabefeldes für ein neues Spiel
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < COLUMNS; j++) { // Zählschleife, die die Anzahl der Spalten durchläuft
-                    grid[i][j].setText(""); // Der Text im Feld wird auf "leer" gesetzt
-                    grid[i][j].setBackground(Color.WHITE); // Die Hintergrundfarbe des Feldes wird auf Weiß gesetzt
-                }
-            }
-            inputField.setText(""); // Das Eingabefeld für den Benutzer wird auf "leer" gesetzt
-        }
 
-        // Fenster sichtbar machen
-        frame.setVisible(true);
-        startTime = Instant.now(); // Startzeit des Spiels setzen; wird benötigt, um die Dauer des Spiels zu berechnen
-    }
+                // Panel für die Benutzereingabe
+                JPanel inputPanel = new JPanel(); // Erstellen eines neuen Panels, das als Eingabepanel für den Benutzer dient
+                inputPanel.setLayout(new BorderLayout(10, 10)); // Das Layout des Eingabepanels wird auf ein BorderLayout mit 10 Pixel Abstand zwischen den Zellen gesetzt
+
+                inputField.setFont(new Font("Arial", Font.PLAIN, 18)); // Die Schriftart des Eingabefeldes wird auf "Arial" gesetzt, mit der Schriftgröße 18pt
+                inputPanel.add(inputField, BorderLayout.CENTER); // Das Eingabefeld wird dem Eingabepanel hinzugefügt; es wird in der Mitte des Panels platziert
+
+                JButton submitButton = new JButton("Eingabe"); // Erstellen eines neuen Buttons mit der Beschriftung "Eingabe"
+                inputPanel.add(submitButton, BorderLayout.EAST); // Der Button wird dem Eingabepanel hinzugefügt; er wird rechts im Panel platziert
+
+                mainPanel.add(gridPanel, BorderLayout.CENTER); // Das Grid/Feld-Panel wird dem Hauptpanel hinzugefügt und in die Mitte des Panels platziert
+                mainPanel.add(inputPanel, BorderLayout.SOUTH); // Das Eingabepanel für das Wort wird dem Hauptpanel hinzugefügt und unten im Panel platziert
+
+                frame.add(mainPanel); // Das Hauptpanel wird dem Fenster hinzugefügt
+
+                // ActionListener für den Submit-Button hinzufügen
+                submitButton.addActionListener(e -> handleSubmit()); // ActionListener für den Submit-Button hinzufügen, um die Eingabe des Benutzers zu verarbeiten, wenn der Button gedrückt wird
+
+                // KeyListener für die Eingabetaste hinzufügen
+                inputField.addKeyListener(new KeyAdapter() { // KeyListener soll genutzt werden, um die Eingabe des Benutzers zu verarbeiten, sobald er die Eingabetaste drückt
+                    @Override
+                    public void keyPressed(KeyEvent e) { // Methode, die prüft, ob eine Taste gedrückt wurde
+                        if (e.getKeyCode() == KeyEvent.VK_ENTER) { // if-Fallunterscheidung, die prüft, ob die Eingabetaste gedrückt wurde
+                            handleSubmit(); // wenn die Eingabetaste gedrückt wurde, wird die Methode "handleSubmit()" aufgerufen, um die Eingabe des Benutzers zu verarbeiten
+                        }
+                    }
+                });
+            } else { // sollte die Wortliste leer sein, wird eine Meldung angezeigt, dass keine Wörter gefunden wurden
+                // Zurücksetzen des Grids und des Eingabefeldes für ein neues Spiel
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < COLUMNS; j++) { // Zählschleife, die die Anzahl der Spalten durchläuft
+                        grid[i][j].setText(""); // Der Text im Feld wird auf "leer" gesetzt
+                        grid[i][j].setBackground(Color.WHITE); // Die Hintergrundfarbe des Feldes wird auf Weiß gesetzt
+                    }
+                }
+                inputField.setText(""); // Das Eingabefeld für den Benutzer wird auf "leer" gesetzt
+            }
+
+            // Fenster sichtbar machen
+            frame.setVisible(true);
+            startTime = Instant.now(); // Startzeit des Spiels setzen; wird benötigt, um die Dauer des Spiels zu berechnen
+        }
 
     // Behandlung der Eingabe des Benutzers
     private void handleSubmit() {
