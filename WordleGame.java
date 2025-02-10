@@ -227,6 +227,20 @@ public class WordleGame {
                 inputField.setText("");
                 return;
             }
+            if (guess.toUpperCase().equals("MENU"))    {    //Zurück zum Menu
+                endGame("Spiel durch DEBUG beendet");
+                return;
+            }
+            if (guess.toUpperCase().equals("RESTART")) {    // Neustart des aktuellen Spiels mit neuem Wort
+                initializeGame();
+                JOptionPane.showMessageDialog(frame, "Neues Wort wurde gewählt");
+                return;
+            }
+            if (guess.toUpperCase().equals("DEBUG RESTART")) {  // Neustart des aktuellen Spiels mit neuem Wort, welches dem Spieler auch angezeigt wird
+                initializeGame();
+                JOptionPane.showMessageDialog(frame, "Neues Wort wurde gewählt.\nDas neue Wort ist: " + secretWord);
+                return;
+            }
         }
     
         // Prüfen, ob die Eingabe die richtige Länge hat
