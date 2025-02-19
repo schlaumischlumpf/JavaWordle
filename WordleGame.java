@@ -145,6 +145,8 @@ public class WordleGame {
                 secretWord = WORD_LIST.get(new Random().nextInt(WORD_LIST.size())).toUpperCase(); // sollte die Wortliste nicht leer sein, wird ein zufälliges Wort aus der Liste ausgewählt und in Großbuchstaben umgewandelt
             }
             currentRow = 0; // der aktuelle Spielzug wird auf 0 gesetzt, das heißt, dass der Spieler noch keinen Zug gemacht hat und sich in der ersten Zeile befindet.
+
+            usedLetters.clear();
     
             // Erstellen und Einrichten des Hauptfensters für das Spiel
             if (frame == null) { // if-Fallunterscheidung, die prüft, ob das Fenster noch nicht erstellt wurde
@@ -246,6 +248,13 @@ public class WordleGame {
                 return;
             }
         }
+        /*      Lila ist Super
+        if (guess.toLowerCase().equals("lila ist super")) {
+            JOptionPane.showMessageDialog(frame, "JA!"); // Lila ist super
+            inputField.setText("LILA IST WIRKLICH SUPER :D");
+            return;
+        }
+        */
     
         // Prüfen, ob die Eingabe die richtige Länge hat
         if (guess.length() != COLUMNS) {
@@ -334,7 +343,9 @@ public class WordleGame {
                     cell.setBackground(falscheStelle); // Der Buchstabe wird gelb markiert
                 } else { // Überprüfung, ob der Buchstabe nicht im Wort enthalten ist
                     cell.setBackground(falsch); // Der Buchstabe wird rot markiert
-                    usedLetters.add(guessChar); // Buchstabe zur Liste der verwendeten Buchstaben hinzufügen
+                    if (!secretWord.contains(String.valueOf(guessChar))) {
+                        usedLetters.add(guessChar); // Buchstabe zur Liste der verwendeten Buchstaben hinzufügen
+                    }
                 }
             }
         }
@@ -370,6 +381,7 @@ public class WordleGame {
         } else {
             if (response == JOptionPane.YES_OPTION && Debug == true)   {
                 showMainMenu();    // Zurück zum Mainmenu sollte Debugmodus an sein
+                rows = 6;
                 frame.dispose();
             } else  {
                 System.exit(0); // Anwendung beenden, wenn der Spieler kein neues Spiel starten möchte
