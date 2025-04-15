@@ -5,7 +5,7 @@ import java.util.*;
 import javafx.application.Platform;
 
 public class import_list {
-    private variables var;
+    private final variables var;
 
     public import_list(variables var) {
         this.var = var;

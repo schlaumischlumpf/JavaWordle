@@ -21,9 +21,15 @@ public class words {
         if (var.userInput.contains("0") || var.userInput.contains("1") || var.userInput.contains("2") || var.userInput.contains("3") || var.userInput.contains("4") || var.userInput.contains("5") || var.userInput.contains("6") || var.userInput.contains("7") || var.userInput.contains("8") || var.userInput.contains("9")) {
             return; // Eingabe enthält Zahlen
         }
+        processUserInput();
     }
 
     public void processUserInput() {
+        variables var = new variables();
+        /*
+        for(int i = 1; i < var.maxAttempts; i++) {
+            char guessChar = var.userInput.charAt(i);
 
+        */
     }
 }
