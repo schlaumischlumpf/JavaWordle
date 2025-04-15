@@ -278,7 +278,7 @@ public class ui extends Application {
                     secondsRemaining--;
                     int minutes = secondsRemaining / 60; // Minuten berechnen, indem verbleibende Sekunden durch 60 geteilt werden
                     int seconds = secondsRemaining % 60; // Sekunden berechnen, indem der Rest der Division durch 60 genommen wird
-                    timerLabel.setText(String.format("Zeit übrig: %d:%02d", minutes, seconds)); // Formatierung der Zeit im Label
+                    timerLabel.setText(String.format("Verbleibende Zeit: %d:%02d", minutes, seconds)); // Formatierung der Zeit im Label
 
                     // Wenn die Zeit abgelaufen ist, soll das Spiel beendet werden
                     if (secondsRemaining <= 0) {
@@ -359,9 +359,11 @@ public class ui extends Application {
             gameLayout.setPadding(new Insets(20));
 
             Label resultLabel = new Label(won ?
-                    "Herzlichen Glückwunsch! Du hast das gesuchte Wort erraten!" :
+                    "Herzlichen Glückwunsch!\nDu hast das gesuchte Wort erraten!" :
                     "Schade! Das gesuchte Wort war: " + targetWord);
             resultLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+            resultLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+            resultLabel.setAlignment(Pos.CENTER);
 
             Button newGameButton = new Button("Neues Spiel");
             Button mainMenuButton = new Button("Zurück zum Hauptmenü");
