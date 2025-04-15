@@ -1,25 +1,27 @@
 package src;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.scene.image.Image;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.util.Duration;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+
+import static src.variables.disableDuplicateLetters;
 
 public class ui extends Application {
     public static boolean openSettingsOnStart = false;
@@ -33,7 +35,7 @@ public class ui extends Application {
             Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ressource/logo.png")));
             stage.getIcons().add(icon);
         } catch (Exception e) {
-            if (debugMode) {
+            if (variables.debugMode) {
                 System.err.println("Fehler beim Laden des Icons: " + e.getMessage());
             }
         }
@@ -131,7 +133,7 @@ public class ui extends Application {
                 showGameScreen(stage);
 
             } catch (Exception e) {
-                if (debugMode) {
+                if (variables.debugMode) {
                     System.err.println("Fehler bei der Auswahl des Spielmodus: " + e.getMessage());
                     e.printStackTrace();
                 }
@@ -192,8 +194,8 @@ public class ui extends Application {
 
         // Hier den Inhalt des Einstellungsmenüs erstellen (aus der settings-Klasse)
         CheckBox debugModeCheckBox = new CheckBox("Debug-Modus aktivieren");
-        debugModeCheckBox.setSelected(debugMode);
-        debugModeCheckBox.setOnAction(_ -> debugMode = debugModeCheckBox.isSelected());
+        debugModeCheckBox.setSelected(variables.debugMode);
+        debugModeCheckBox.setOnAction(_ -> variables.debugMode = debugModeCheckBox.isSelected());
 
         CheckBox disableDuplicatesCheckBox = new CheckBox("Doppelte Buchstaben deaktivieren (nicht verfügbar)");
         disableDuplicatesCheckBox.setSelected(disableDuplicateLetters);
@@ -218,14 +220,14 @@ public class ui extends Application {
 
     // Eigene GameField-Klasse mit Überprüfungslogik
     private static class GameFieldWithCheck extends ressource.gameField {
-        private final String targetWord;
-        private int currentRow = 0;
+        private final String targetWord; // Zielwort
+        private int currentRow = 0; // Aktuelle Zeile; wird bei jedem Versuch erhöht, beginnt mit 0
         private final Stage parentStage;  // Referenz auf das Hauptfenster
         private final ui uiReference;     // Referenz auf die UI-Klasse
-        private final boolean withTimer;
-        private Timeline timer;
-        private Label timerLabel;
-        private int secondsRemaining;
+        private final boolean withTimer; // Boolean für Timer
+        private Timeline timer; // Timer-Objekt
+        private Label timerLabel; // Label für den Timer
+        private int secondsRemaining; // verbleibende Sekunden
         private final Set<Character> incorrectLetters = new HashSet<>();
 
         public GameFieldWithCheck(String targetWord, Stage stage, ui uiReference, int rows, boolean withTimer) {
@@ -244,8 +246,8 @@ public class ui extends Application {
                 setupTimer();
 
                 // Bei Modus 3: Eingabe-Validierung für falsche Buchstaben hinzufügen
-                inputField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    if (newValue.length() > oldValue.length() && newValue.length() > 0) {
+                inputField.textProperty().addListener((_, oldValue, newValue) -> {
+                    if (newValue.length() > oldValue.length()) {
                         // Prüfen, ob der neueste Buchstabe falsch ist
                         char lastChar = Character.toUpperCase(newValue.charAt(newValue.length() - 1));
                         if (incorrectLetters.contains(lastChar)) {
@@ -263,31 +265,31 @@ public class ui extends Application {
 
         private void setupTimer() {
             // Timer für 3:30 Minuten (210 Sekunden)
-            secondsRemaining = 10;
-            timerLabel = new Label("Zeit übrig: 0:10");
-            timerLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
-            timerLabel.setTextFill(Color.BLACK);
+            secondsRemaining = 210;
+            timerLabel = new Label("Verbleibende Zeit: 3:30"); // Initialwert für das Label; hier 3 Minuten 30 Sekunden
+            timerLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16)); // Schriftart und Größe
+            timerLabel.setTextFill(Color.BLACK); // Schwarze Schriftfarbe
 
             // Timer am Anfang des VBox einfügen
-            this.getChildren().add(0, timerLabel);
+            this.getChildren().addFirst(timerLabel); // Timer-Label an den Anfang der VBox setzen
 
             timer = new Timeline(
                 new KeyFrame(Duration.seconds(1), _ -> {
                     secondsRemaining--;
-                    int minutes = secondsRemaining / 60;
-                    int seconds = secondsRemaining % 60;
-                    timerLabel.setText(String.format("Zeit übrig: %d:%02d", minutes, seconds));
+                    int minutes = secondsRemaining / 60; // Minuten berechnen, indem verbleibende Sekunden durch 60 geteilt werden
+                    int seconds = secondsRemaining % 60; // Sekunden berechnen, indem der Rest der Division durch 60 genommen wird
+                    timerLabel.setText(String.format("Zeit übrig: %d:%02d", minutes, seconds)); // Formatierung der Zeit im Label
 
-                    // Zeit abgelaufen
+                    // Wenn die Zeit abgelaufen ist, soll das Spiel beendet werden
                     if (secondsRemaining <= 0) {
-                        timer.stop();
-                        showResultDialog(false);
+                        timer.stop(); // Timer wird beendet
+                        showResultDialog(false); // Da das Wort nicht erraten wurde, wird false übergeben
                     }
                 })
             );
 
-            timer.setCycleCount(Timeline.INDEFINITE);
-            timer.play();
+            timer.setCycleCount(Timeline.INDEFINITE); // Timer läuft unendlich oft
+            timer.play(); // Timer starten
         }
 
         private void checkInput(String input) {
