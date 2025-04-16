@@ -30,17 +30,6 @@ public class ui extends Application {
     ToggleGroup tg;
     private VBox rootNode;
 
-    private void setStageIcon(Stage stage) {
-        try {
-            Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ressource/logo.png")));
-            stage.getIcons().add(icon);
-        } catch (Exception e) {
-            if (variables.debugMode) {
-                System.err.println("Fehler beim Laden des Icons: " + e.getMessage());
-            }
-        }
-    }
-
     public static void noFiveLetterWords() {
         Platform.runLater(() -> {
             Stage insertFilePath = new Stage();
@@ -67,6 +56,17 @@ public class ui extends Application {
 
         rootNode.getChildren().addAll(error, filePath, btnConfirmFilePath);
         insertFilePath.show();
+    }
+
+    private void setStageIcon(Stage stage) {
+        try {
+            Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ressource/logo.png")));
+            stage.getIcons().add(icon);
+        } catch (Exception e) {
+            if (variables.debugMode) {
+                System.err.println("Fehler beim Laden des Icons: " + e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -221,14 +221,14 @@ public class ui extends Application {
     // Eigene GameField-Klasse mit Überprüfungslogik
     private static class GameFieldWithCheck extends ressource.gameField {
         private final String targetWord; // Zielwort
-        private int currentRow = 0; // Aktuelle Zeile; wird bei jedem Versuch erhöht, beginnt mit 0
         private final Stage parentStage;  // Referenz auf das Hauptfenster
         private final ui uiReference;     // Referenz auf die UI-Klasse
         private final boolean withTimer; // Boolean für Timer
+        private final Set<Character> incorrectLetters = new HashSet<>();
+        private int currentRow = 0; // Aktuelle Zeile; wird bei jedem Versuch erhöht, beginnt mit 0
         private Timeline timer; // Timer-Objekt
         private Label timerLabel; // Label für den Timer
         private int secondsRemaining; // verbleibende Sekunden
-        private final Set<Character> incorrectLetters = new HashSet<>();
 
         public GameFieldWithCheck(String targetWord, Stage stage, ui uiReference, int rows, boolean withTimer) {
             super(rows);
@@ -274,18 +274,18 @@ public class ui extends Application {
             this.getChildren().addFirst(timerLabel); // Timer-Label an den Anfang der VBox setzen
 
             timer = new Timeline(
-                new KeyFrame(Duration.seconds(1), _ -> {
-                    secondsRemaining--;
-                    int minutes = secondsRemaining / 60; // Minuten berechnen, indem verbleibende Sekunden durch 60 geteilt werden
-                    int seconds = secondsRemaining % 60; // Sekunden berechnen, indem der Rest der Division durch 60 genommen wird
-                    timerLabel.setText(String.format("Verbleibende Zeit: %d:%02d", minutes, seconds)); // Formatierung der Zeit im Label
+                    new KeyFrame(Duration.seconds(1), _ -> {
+                        secondsRemaining--;
+                        int minutes = secondsRemaining / 60; // Minuten berechnen, indem verbleibende Sekunden durch 60 geteilt werden
+                        int seconds = secondsRemaining % 60; // Sekunden berechnen, indem der Rest der Division durch 60 genommen wird
+                        timerLabel.setText(String.format("Verbleibende Zeit: %d:%02d", minutes, seconds)); // Formatierung der Zeit im Label
 
-                    // Wenn die Zeit abgelaufen ist, soll das Spiel beendet werden
-                    if (secondsRemaining <= 0) {
-                        timer.stop(); // Timer wird beendet
-                        showResultDialog(false); // Da das Wort nicht erraten wurde, wird false übergeben
-                    }
-                })
+                        // Wenn die Zeit abgelaufen ist, soll das Spiel beendet werden
+                        if (secondsRemaining <= 0) {
+                            timer.stop(); // Timer wird beendet
+                            showResultDialog(false); // Da das Wort nicht erraten wurde, wird false übergeben
+                        }
+                    })
             );
 
             timer.setCycleCount(Timeline.INDEFINITE); // Timer läuft unendlich oft

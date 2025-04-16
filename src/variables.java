@@ -8,7 +8,6 @@ public class variables {
     public static String currentTarget = null; // Zielwort
     public static Random random = new Random(); // Zufallszahlengenerator
     public String filePath = ""; // Pfad für die Wortliste
-    public String wordlist = ""; // Wortliste
     public static List<String> fiveLetterWords = new ArrayList<>(); // Liste für die 5-Buchstaben-Wörter
     public String secretWord = ""; // Geheimes Wort
     public String userInput = ""; // Benutzereingabe
@@ -24,7 +23,7 @@ public class variables {
             return "busen";
         }
 
-        // Falls kein Debug-Modus, wähle ein zufälliges Wort aus der Liste
+        // Falls kein Debug-Modus wähle ein zufälliges Wort aus der Liste
         if (currentTarget == null && !fiveLetterWords.isEmpty()) {
             int index = random.nextInt(fiveLetterWords.size());
             currentTarget = fiveLetterWords.get(index);
