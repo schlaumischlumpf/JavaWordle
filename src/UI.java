@@ -16,54 +16,29 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import ressource.CheckAlgo;
+import ressource.GameField;
+import ressource.Wortliste;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import static src.variables.disableDuplicateLetters;
+import static src.Variables.disableDuplicateLetters;
 
-public class ui extends Application {
+public class UI extends Application {
     public static boolean openSettingsOnStart = false;
-    static variables var = new variables();
+    static Variables var = new Variables();
     Label response;
     ToggleGroup tg;
     private VBox rootNode;
-
-    public static void noFiveLetterWords() {
-        Platform.runLater(() -> {
-            Stage insertFilePath = new Stage();
-            startFilePathError(insertFilePath);
-        });
-    }
-
-    public static void startFilePathError(Stage insertFilePath) {
-        insertFilePath.setTitle("Fehler bei der Pfadangabe");
-        VBox rootNode = new VBox(10);
-        rootNode.setAlignment(Pos.CENTER);
-        Scene scene = new Scene(rootNode, 600, 300);
-        insertFilePath.setScene(scene);
-
-        Label error = new Label("Leider konnte keine Wortliste gefunden werden. Bitte überprüfe die Pfadangabe. Aktuell ist " + var.filePath + " eingetragen.");
-        TextField filePath = new TextField();
-        Button btnConfirmFilePath = new Button("Pfad bestätigen");
-        btnConfirmFilePath.setOnAction(_ -> {
-            import_list importer = new import_list(var);
-            importer.setFilePath(filePath.getText());
-            importer.import_list();
-            insertFilePath.close();
-        });
-
-        rootNode.getChildren().addAll(error, filePath, btnConfirmFilePath);
-        insertFilePath.show();
-    }
 
     private void setStageIcon(Stage stage) {
         try {
             Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ressource/logo.png")));
             stage.getIcons().add(icon);
         } catch (Exception e) {
-            if (variables.debugMode) {
+            if (Variables.debugMode) {
                 System.err.println("Fehler beim Laden des Icons: " + e.getMessage());
             }
         }
@@ -133,7 +108,7 @@ public class ui extends Application {
                 showGameScreen(stage);
 
             } catch (Exception e) {
-                if (variables.debugMode) {
+                if (Variables.debugMode) {
                     System.err.println("Fehler bei der Auswahl des Spielmodus: " + e.getMessage());
                     e.printStackTrace();
                 }
@@ -167,9 +142,9 @@ public class ui extends Application {
             gameLayout.setAlignment(Pos.CENTER);
 
             // GameField erstellen basierend auf dem Spielmodus
-            variables.resetTargetWord();
+            Variables.resetTargetWord();
 
-            String targetWord = ressource.wortliste.getRandomWord();
+            String targetWord = Wortliste.getRandomWord();
             GameFieldWithCheck gameField = switch (var.gameType) {
                 case 2 -> new GameFieldWithCheck(targetWord, stage, this, 4, false);
                 case 3 -> new GameFieldWithCheck(targetWord, stage, this, 6, true);
@@ -192,10 +167,10 @@ public class ui extends Application {
         rootNode.getChildren().clear();
         stage.setTitle("Einstellungen");
 
-        // Hier den Inhalt des Einstellungsmenüs erstellen (aus der settings-Klasse)
+        // Hier den Inhalt des Einstellungsmenüs erstellen (aus der Settings-Klasse)
         CheckBox debugModeCheckBox = new CheckBox("Debug-Modus aktivieren");
-        debugModeCheckBox.setSelected(variables.debugMode);
-        debugModeCheckBox.setOnAction(_ -> variables.debugMode = debugModeCheckBox.isSelected());
+        debugModeCheckBox.setSelected(Variables.debugMode);
+        debugModeCheckBox.setOnAction(_ -> Variables.debugMode = debugModeCheckBox.isSelected());
 
         CheckBox disableDuplicatesCheckBox = new CheckBox("Doppelte Buchstaben deaktivieren (nicht verfügbar)");
         disableDuplicatesCheckBox.setSelected(disableDuplicateLetters);
@@ -219,10 +194,10 @@ public class ui extends Application {
     }
 
     // Eigene GameField-Klasse mit Überprüfungslogik
-    private static class GameFieldWithCheck extends ressource.gameField {
+    private static class GameFieldWithCheck extends GameField {
         private final String targetWord; // Zielwort
         private final Stage parentStage;  // Referenz auf das Hauptfenster
-        private final ui uiReference;     // Referenz auf die UI-Klasse
+        private final UI uiReference;     // Referenz auf die UI-Klasse
         private final boolean withTimer; // Boolean für Timer
         private final Set<Character> incorrectLetters = new HashSet<>();
         private int currentRow = 0; // Aktuelle Zeile; wird bei jedem Versuch erhöht, beginnt mit 0
@@ -230,7 +205,7 @@ public class ui extends Application {
         private Label timerLabel; // Label für den Timer
         private int secondsRemaining; // verbleibende Sekunden
 
-        public GameFieldWithCheck(String targetWord, Stage stage, ui uiReference, int rows, boolean withTimer) {
+        public GameFieldWithCheck(String targetWord, Stage stage, UI uiReference, int rows, boolean withTimer) {
             super(rows);
             this.targetWord = targetWord.toUpperCase();
             this.parentStage = stage;
@@ -309,7 +284,7 @@ public class ui extends Application {
                     }
 
                     // Wort überprüfen und Farben setzen
-                    Color[] colors = ressource.checkAlgo.pruefeWort(normalizedInput, targetWord);
+                    Color[] colors = CheckAlgo.pruefeWort(normalizedInput, targetWord);
                     for (int col = 0; col < 5; col++) {
                         setCellColor(currentRow, col, colors[col]);
 

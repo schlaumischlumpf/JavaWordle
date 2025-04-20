@@ -8,7 +8,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class settings {
+public class Settings {
 
     public static void startSettings() {
         Stage settingsStage = new Stage();
@@ -20,15 +20,15 @@ public class settings {
 
         // Checkboxen mit aktuellem Zustand initialisieren
         CheckBox debugMode = new CheckBox("Debug-Modus");
-        debugMode.setSelected(variables.debugMode);
+        debugMode.setSelected(Variables.debugMode);
 
         CheckBox disableDuplicateLetters = new CheckBox("Doppelte Buchstaben deaktivieren");
-        disableDuplicateLetters.setSelected(variables.disableDuplicateLetters);
+        disableDuplicateLetters.setSelected(Variables.disableDuplicateLetters);
 
         Button saveButton = new Button("Speichern");
         saveButton.setOnAction(_ -> {
-            variables.debugMode = debugMode.isSelected();
-            variables.disableDuplicateLetters = disableDuplicateLetters.isSelected();
+            Variables.debugMode = debugMode.isSelected();
+            Variables.disableDuplicateLetters = disableDuplicateLetters.isSelected();
             settingsStage.close();
         });
 

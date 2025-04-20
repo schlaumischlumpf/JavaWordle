@@ -2,7 +2,7 @@ package ressource;
 
 import java.util.Random;
 
-public class wortliste {
+public class Wortliste {
     // Listen der verfügbaren 5-Buchstaben-Wörter
 
     // Ursprüngliche Liste

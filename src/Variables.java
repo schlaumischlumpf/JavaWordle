@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class variables {
+public class Variables {
     public static String currentTarget = null; // Zielwort
     public static Random random = new Random(); // Zufallszahlengenerator
     public String filePath = ""; // Pfad für die Wortliste

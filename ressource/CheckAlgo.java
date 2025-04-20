@@ -2,7 +2,7 @@ package ressource;
 
 import javafx.scene.paint.Color;
 
-public class checkAlgo {
+public class CheckAlgo {
 
     /**
      * Überprüft das eingegebene Wort mit dem Zielwort und bestimmt die Farben für jede Zelle.

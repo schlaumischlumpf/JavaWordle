@@ -14,7 +14,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-public class gameField extends VBox {
+public class GameField extends VBox {
     private static final int COLS = 5;
     private static final int CELL_SIZE = 60;
     private static final int CELL_GAP = 10;
@@ -24,11 +24,11 @@ public class gameField extends VBox {
     private final TextField inputField;
     private int currentRow = 0;
 
-    public gameField() {
+    public GameField() {
         this(6); // Standard: 6 Zeilen
     }
 
-    public gameField(int rows) {
+    public GameField(int rows) {
         this.rows = rows;
         this.setAlignment(Pos.CENTER);
         this.setSpacing(20);

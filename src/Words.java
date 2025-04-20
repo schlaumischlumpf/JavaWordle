@@ -2,8 +2,8 @@ package src;
 import java.util.*;
 
 
-public class words {
-    variables var = new variables();
+public class Words {
+    Variables var = new Variables();
     public void chooseSecretWord() {
         Random rand = new Random();
         int randomIndex = rand.nextInt(var.fiveLetterWords.size());
@@ -25,7 +25,7 @@ public class words {
     }
 
     public void processUserInput() {
-        variables var = new variables();
+        Variables var = new Variables();
         /*
         for(int i = 1; i < var.maxAttempts; i++) {
             char guessChar = var.userInput.charAt(i);
