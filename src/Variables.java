@@ -17,6 +17,7 @@ public class Variables {
     public static boolean debugMode = false; // Debug-Modus
     public static boolean disableDuplicateLetters = false; // Doppelte Buchstaben deaktivieren
     public int gameType = 1; // Spielmodus; 1 = normale Schwierigkeit (6 Versuche, das Wort zu erraten), 2 = erhöhte Schwierigkeit (4 Versuche, das Wort zu erraten, 3 = In Planung
+    public static int timerSeconds = 210; // Timer in Sekunden; Standardwert 210 Sekunden, also 3:30 Minuten
 
     public static String getTargetWord() {
         if (debugMode) {

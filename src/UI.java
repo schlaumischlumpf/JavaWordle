@@ -167,7 +167,7 @@ public class UI extends Application {
         rootNode.getChildren().clear();
         stage.setTitle("Einstellungen");
 
-        // Hier den Inhalt des Einstellungsmenüs erstellen (aus der Settings-Klasse)
+        // Hier den Inhalt des Einstellungsmenüs erstellen (aus der settings-Klasse)
         CheckBox debugModeCheckBox = new CheckBox("Debug-Modus aktivieren");
         debugModeCheckBox.setSelected(Variables.debugMode);
         debugModeCheckBox.setOnAction(_ -> Variables.debugMode = debugModeCheckBox.isSelected());
@@ -175,6 +175,36 @@ public class UI extends Application {
         CheckBox disableDuplicatesCheckBox = new CheckBox("Doppelte Buchstaben deaktivieren (nicht verfügbar)");
         disableDuplicatesCheckBox.setSelected(disableDuplicateLetters);
         disableDuplicatesCheckBox.setOnAction(_ -> disableDuplicateLetters = disableDuplicatesCheckBox.isSelected());
+
+        // Slider, mit dem man die Timerzeit einstellen kann
+        Slider setTimerValue = new Slider(30, 360,30);
+        setTimerValue.setMajorTickUnit(30); // Schrittweite
+        setTimerValue.setMinorTickCount(0);
+        setTimerValue.setSnapToTicks(true);
+        setTimerValue.setPrefWidth(350); // Der Slider soll etwa 70-80% des Fensters einnehmen
+        setTimerValue.setShowTickMarks(true);
+        setTimerValue.setShowTickLabels(false);
+
+        // Anzeigeeinstellungen für den Slider
+
+        // Nur die Min- und Max-Werte anzeigen auf dem Slider
+        HBox sliderBox = new HBox(10);
+        sliderBox.setAlignment(Pos.CENTER);
+        Label minLabel = new Label("30s");
+        Label maxLabel = new Label("360s");
+        sliderBox.getChildren().addAll(minLabel, setTimerValue, maxLabel);
+
+        // Label für die Werte
+        Label sliderValueLabel = new Label("Eingestellte Timerzeit: 30 Sekunden");
+
+        // Wert-Listener für den Sliderwert
+        setTimerValue.valueProperty().addListener((_, _, newValue) -> {
+            int timerValue = newValue.intValue();
+            sliderValueLabel.setText("Eingestellte Timerzeit: " + timerValue + " Sekunden");
+
+            // Nun soll die eingestellte Zeit in variables gespeichert werden
+            Variables.timerSeconds = timerValue;
+        });
 
         Button btnBack = new Button("Zurück zum Hauptmenü");
         btnBack.setOnAction(_ -> showMainMenu(stage));
@@ -186,6 +216,8 @@ public class UI extends Application {
         settingsContent.getChildren().addAll(
                 debugModeCheckBox,
                 disableDuplicatesCheckBox,
+                sliderBox,
+                sliderValueLabel,
                 btnBack
         );
 
@@ -239,11 +271,14 @@ public class UI extends Application {
         }
 
         private void setupTimer() {
-            // Timer für 3:30 Minuten (210 Sekunden)
-            secondsRemaining = 210;
-            timerLabel = new Label("Verbleibende Zeit: 3:30"); // Initialwert für das Label; hier 3 Minuten 30 Sekunden
-            timerLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16)); // Schriftart und Größe
-            timerLabel.setTextFill(Color.BLACK); // Schwarze Schriftfarbe
+            secondsRemaining = Variables.timerSeconds;
+            int minutes = secondsRemaining / 60;
+            int seconds = secondsRemaining % 60;
+
+            // Label mit dem korrekten initialen Wert
+            timerLabel = new Label(String.format("Verbleibende Zeit: %d:%02d", minutes, seconds));
+            timerLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+            timerLabel.setTextFill(Color.BLACK);
 
             // Timer am Anfang des VBox einfügen
             this.getChildren().addFirst(timerLabel); // Timer-Label an den Anfang der VBox setzen
@@ -251,9 +286,9 @@ public class UI extends Application {
             timer = new Timeline(
                     new KeyFrame(Duration.seconds(1), _ -> {
                         secondsRemaining--;
-                        int minutes = secondsRemaining / 60; // Minuten berechnen, indem verbleibende Sekunden durch 60 geteilt werden
-                        int seconds = secondsRemaining % 60; // Sekunden berechnen, indem der Rest der Division durch 60 genommen wird
-                        timerLabel.setText(String.format("Verbleibende Zeit: %d:%02d", minutes, seconds)); // Formatierung der Zeit im Label
+                        int currentMinutes = secondsRemaining / 60; // Variablenname geändert
+                        int currentSeconds = secondsRemaining % 60; // Variablenname geändert
+                        timerLabel.setText(String.format("Verbleibende Zeit: %d:%02d", currentMinutes, currentSeconds)); // Formatierung der Zeit im Label
 
                         // Wenn die Zeit abgelaufen ist, soll das Spiel beendet werden
                         if (secondsRemaining <= 0) {
