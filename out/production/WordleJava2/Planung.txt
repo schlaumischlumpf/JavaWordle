@@ -1,0 +1,20 @@
+To-Dos und Ideen für das Wordle:
+
+- Verbesserung/Optimierung der Startperformance [offen; kompliziert in der Umsetzung]
+    - eventuell etwas wie Caching oder Precaching umsetzen
+
+- Label für den Timer in den Einstellungen hinzufügen über dem Slider [geplant; unkompliziert in der Umsetzung]
+    - "Timer für den Challengemodus festlegen"
+
+- Weiteres Auskommentieren des Codes bzw. der verschiedenen Klassen [geplant; unkompliziert in der Umsetzung]
+    - in Zukunft vielleicht eine statische Dokumentationsseite zu der Funktionsweise bauen (?)
+
+- Optimierung der Methoden
+    - Möglichkeiten von Lamda-Expressions etc.
+
+- Übersichtlichkeit des Codes
+
+- Mehr Optionen zu dem Spiel hinzufügen
+    - Wordle mit 4-Buchstaben
+    - Wordle mit 6-Buchstaben
+    - [...]
