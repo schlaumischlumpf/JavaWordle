@@ -1,8 +1,18 @@
-package src;
+// Variables.java
+// Stand: 22.04.2025
+// Autoren: Lennart und Moritz
 
+package src;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+/*
+    Über diese Klasse:
+    Die Wortliste-Klasse enthält eine Liste der verfügbaren Wörter, die für das Spiel verwendet werden können.
+    Dabei wird ein Wort aus dieser Liste zufällig ausgewählt und in Großbuchstaben zurückgegeben.
+    Die Liste ist dabei alphabetisch sortiert und enthält lediglich Wörter mit fünf Buchstaben.
+*/
 
 public class Variables {
     public static String currentTarget = null; // Zielwort

@@ -1,5 +1,8 @@
-package src;
+// UI.java
+// Stand: 22.04.2025
+// Autoren: Lennart und Moritz
 
+package src;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -16,18 +19,25 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import ressource.CheckAlgo;
-import ressource.GameField;
-import ressource.Wortliste;
-
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-
+import ressource.CheckAlgo;
+import ressource.GameField;
+import ressource.Wortliste;
 import static src.Variables.disableDuplicateLetters;
 
+/*
+    Über diese Klasse:
+    Die UI-Klasse ist für die Benutzeroberfläche des Spiels verantwortlich.
+    Sie enthält Methoden zum Erstellen und Verwalten der verschiedenen Anwendungsfenster,
+    einschließlich des Hauptmenüs, des Einstellungsmenüs und des Spiels.
+*/
+
 public class UI extends Application {
+    // Boolean, damit die Einstellungen nicht beim Starten der Anwendung geöffnet werden
     public static boolean openSettingsOnStart = false;
+
     static Variables var = new Variables();
     Label response;
     ToggleGroup tg;
@@ -66,20 +76,30 @@ public class UI extends Application {
     private void showMainMenu(Stage stage) {
         // Hauptmenü leeren
         rootNode.getChildren().clear();
+
+        // Titel des Fensters
         stage.setTitle("Auswahl der Spielmodi");
 
+        // Label für Spielmodusauswahl
         Label auswahl = new Label("Wähle einen Spielmodus");
-        response = new Label("Du hast noch keinen Spielmodus gewählt");
+
+        // Buttons für Spielstart und Einstellungsmenü
         Button btnConfirm = new Button("Spiel mit diesem Modus starten");
         Button openSettings = new Button("Einstellungen");
+
+        // Breite des Einstellungsbuttons auf 150px
         openSettings.setPrefWidth(150);
 
-        RadioButton rbModus1 = new RadioButton("Modus 1");
-        RadioButton rbModus2 = new RadioButton("Modus 2");
-        RadioButton rbModus3 = new RadioButton("Modus 3");
+        // Erstellung von Radiobuttons für die drei Spielmodi
+        RadioButton rbModus1 = new RadioButton("Normal");
+        RadioButton rbModus2 = new RadioButton("Schwer");
+        RadioButton rbModus3 = new RadioButton("Challenge");
 
+        // Festlegung der Fenstergröße
         stage.setHeight(400);
         stage.setWidth(500);
+
+        // Minimale Fenstergröße soll der festgelegten Größe entsprechen
         stage.setMinHeight(400);
         stage.setMinWidth(500);
 
@@ -89,38 +109,29 @@ public class UI extends Application {
         rbModus3.setToggleGroup(tg);
         rbModus1.setSelected(true);
 
+
         btnConfirm.setOnAction(_ -> {
-            try {
-                RadioButton rb = (RadioButton) tg.getSelectedToggle();
-                switch (rb.getText()) {
-                    case "Modus 1":
-                        var.gameType = 1;
-                        break;
-                    case "Modus 2":
-                        var.gameType = 2;
-                        break;
-                    case "Modus 3":
-                        var.gameType = 3;
-                        break;
-                }
+            // Speicherung des ausgewählten Radiobuttons
+            RadioButton rb = (RadioButton) tg.getSelectedToggle();
 
-                // Zum Spielbildschirm wechseln
-                showGameScreen(stage);
-
-            } catch (Exception e) {
-                if (Variables.debugMode) {
-                    System.err.println("Fehler bei der Auswahl des Spielmodus: " + e.getMessage());
-                    e.printStackTrace();
-                }
+            // Bestimmung der Spielmodiauswahl mit switch-case-Abfrage
+            switch (rb.getText()) {
+                case "Normal" -> var.gameType = 1; // gameType 1 = normales Wordle mit 6 Versuchen und ohne Timer
+                case "Schwer" -> var.gameType = 2; // gameType 2 = schweres Wordle mit 4 Versuchen und ohne Timer
+                case "Challenge" -> var.gameType = 3; // gameType 3 = Challenge mit 6 Versuchen und Timer (anpassbar)
             }
+
+            // Zum Spielbildschirm wechseln
+            showGameScreen(stage);
         });
 
+        // Öffnen des Einstellungsmenüs bei Klick auf Einstellungsmenü
         openSettings.setOnAction(_ -> showSettingsMenu(stage));
 
         HBox radioButtons = new HBox(10, rbModus1, rbModus2, rbModus3);
         radioButtons.setAlignment(Pos.CENTER);
         VBox.setMargin(openSettings, new Insets(50, 0, 0, 0));
-        rootNode.getChildren().addAll(auswahl, radioButtons, btnConfirm, response, openSettings);
+        rootNode.getChildren().addAll(auswahl, radioButtons, btnConfirm, openSettings);
         stage.centerOnScreen();
     }
 

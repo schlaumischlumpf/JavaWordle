@@ -1,100 +1,68 @@
-package ressource;
+// Wortliste.java
+// Stand: 22.04.2025
+// Autoren: Lennart und Moritz
 
+package ressource;
 import java.util.Random;
 
+/*
+    Über diese Klasse:
+    Die Wortliste-Klasse enthält eine Liste der verfügbaren Wörter, die für das Spiel verwendet werden können.
+    Dabei wird ein Wort aus dieser Liste zufällig ausgewählt und in Großbuchstaben zurückgegeben.
+    Die Liste ist dabei alphabetisch sortiert und enthält lediglich Wörter mit fünf Buchstaben.
+*/
+
 public class Wortliste {
-    // Listen der verfügbaren 5-Buchstaben-Wörter
-
-    // Ursprüngliche Liste
-    private static final String[] WOERTER_1 = {
-            "Apfel", "Blume", "Eiche", "Feder", "Geist", "Hotel", "Käfig", "Nacht",
-            "Pferd", "Radio", "Sonne", "Truhe", "Wache", "Wiese", "Birne", "Eimer",
-            "Fluss", "Glanz", "Kerze", "Lampe", "Nacht", "Regen", "Stahl", "Taube",
-            "Vogel", "Brand", "Busch", "Ernte", "Fuchs", "Berge", "Creme", "Druck",
-            "Faden", "Gurke", "Insel", "Jacke", "Kanal", "Licht", "Motor", "Nadel",
-            "Pause", "Qualm", "Rasen", "Schaf", "Tasse", "Zebra", "Blatt", "Welle",
-            "Zange", "Haken", "Lunge", "Moped", "Winde", "Mütze", "Ampel", "Eiche",
-            "Kegel", "Larve", "Mauer", "Sauna", "Alpen", "Alter", "Ampel", "Angel",
-            "Anker", "Apfel", "Arena", "Bauch", "Beere", "Beleg", "Berge", "Besen",
-            "Biene", "Birne", "Blase", "Blatt", "Blech", "Blick", "Blume", "Boden",
-            "Bohne", "Borke", "Braue", "Braut", "Brief", "Bruch", "Brust", "Buchs",
-            "Buero", "Busen", "Dachs", "Dampf", "Decke", "Diele", "Dolch", "Draht",
-            "Dreck", "Druck", "Duene", "Duett", "Dunst", "Durst", "Ecken", "Eiche",
-            "Eimer", "Eiter", "Elend", "Falte", "Feder", "Feier", "Feind", "Felge",
-            "Ferse", "Firma", "Fluch", "Fluss", "Folie", "Forst", "Foyer", "Frist",
-            "Frost", "Fugen", "Funde", "Liebe", "Angst", "Stolz", "Kraft", "Traum",
-            "Leben", "Salat", "Biene", "Sonne", "Stern", "Feuer", "Klang", "Geist",
-            "Wille", "Reise", "Gebet", "Welle", "Start", "Dauer", "Tiefe", "Treue",
-            "Dauer", "Ferne"
+    // Liste der verfügbaren Wörter in alphabetischer Reihenfolge
+    private static final String[] WOERTER = {
+            "Abtei", "Acker", "Adler", "Äffin", "Aktie", "Alben", "Alter", "Ampel", "Angel", "Angst",
+            "Anion", "Anker", "Apfel", "Arche", "Arena", "Argon", "Armut", "Asien", "Atlas", "Äther",
+            "Bambi", "Bande", "Basis", "Bauch", "Bauer", "Beere", "Beruf", "Besen", "Beule", "Biene",
+            "Biker", "Birke", "Birne", "Blase", "Blatt", "Blech", "Blick", "Block", "Blöße", "Blume",
+            "Boden", "Bohne", "Bonze", "Börde", "Bowle", "Brand", "Braue", "Braut", "Brief", "Bruch",
+            "Buben", "Bucht", "Bulle", "Busch", "Busen", "Büste", "Chart", "Chaos", "Cobol", "Creme",
+            "Curie", "Cyber", "Dachs", "Dampf", "Datum", "Decke", "Delta", "Demut", "Diana", "Diele",
+            "Docht", "Dogge", "Dolch", "Dosis", "Dover", "Draht", "Dreck", "Drink", "Druck", "Droge",
+            "Drüse", "Duell", "Dunst", "Durst", "Ebene", "Eiche", "Eimer", "Eiter", "Eklat", "Ekzem",
+            "Elend", "Elfen", "Engel", "Enzym", "Ernte", "Fahne", "Falte", "Fazit", "Feder", "Fehde",
+            "Feier", "Feile", "Feind", "Felge", "Fermi", "Ferse", "Final", "Firma", "First", "Fisch",
+            "Flaum", "Fluch", "Fluss", "Föhre", "Folie", "Forst", "Foyer", "Frist", "Fritz", "Frost",
+            "Fuchs", "Fuder", "Futur", "Fürze", "Gämse", "Garde", "Gehör", "Geist", "Gemüt", "Getto",
+            "Gilde", "Glanz", "Glück", "Götze", "Grace", "Grund", "Haifa", "Haken", "Hanse", "Harry",
+            "Hertz", "Hitze", "Hobby", "Honda", "Hotel", "Hunne", "Hydra", "Imker", "Indiz", "Insel",
+            "Intus", "Islam", "Jacht", "Jaffa", "Joule", "Jubel", "Julia", "Kabul", "Kaaba", "Kamin",
+            "Kanal", "Karte", "Kasse", "Kater", "Kelch", "Kenia", "Kerze", "Kleie", "Kleid", "Kohle",
+            "Komet", "Kopie", "Korso", "Kraft", "Kranz", "Krieg", "Kubus", "Kuhle", "Kupon", "Kurie",
+            "Kurve", "Labor", "Lader", "Lampe", "Laser", "Leben", "Leber", "Leder", "Leier", "Lende",
+            "Lepra", "Liebe", "Licht", "Limit", "Linie", "Lotse", "Löwin", "Lunge", "Luxus", "Mafia",
+            "Makro", "Marge", "Markt", "Masse", "Mathe", "Media", "Metro", "Milbe", "Milch", "Mimik",
+            "Model", "Modus", "Mönch", "Moral", "Motor", "Motiv", "Mumps", "Müsli", "Mütze", "Nagel",
+            "Nacht", "Nadel", "Namen", "Neffe", "Notar", "Obhut", "Ocker", "Opfer", "Organ", "Orgie",
+            "Paris", "Patch", "Pause", "Peter", "Petra", "Pfeil", "Pfarr", "Pferd", "Pfote", "Pfund",
+            "Pille", "Pinie", "Platz", "Pokal", "Polle", "Posse", "Prime", "Probe", "Profi", "Pudel",
+            "Puder", "Pulle", "Putin", "Quark", "Qualm", "Qubit", "Rabat", "Rache", "Radar", "Radio",
+            "Rapid", "Rappe", "Rasen", "Rasse", "Reise", "Revue", "Ricke", "Rotor", "Rubel", "Rumpf",
+            "Sahne", "Salat", "Samba", "Sauce", "Schal", "Schaf", "Schah", "Scheu", "Sicht", "Sippe",
+            "Skalp", "Slawe", "Socke", "Sohle", "Solei", "Sonne", "Sound", "Späne", "Speer", "Spore",
+            "Spree", "Spule", "Stadt", "Stahl", "Start", "Stase", "Stern", "Stock", "Stolz", "Streu",
+            "Stuck", "Sudan", "Sühne", "Sülze", "Summe", "Szene", "Tafel", "Tango", "Tarif", "Tasse",
+            "Taube", "Teint", "Tempo", "Tenne", "Thema", "Tisch", "Toner", "Tonne", "Törin", "Torus",
+            "Trafo", "Traum", "Treue", "Truhe", "Trunk", "Ungar", "Untat", "Urahn", "Vater", "Vogel",
+            "Volvo", "Wache", "Waise", "Walze", "Wange", "Wedel", "Weide", "Weihe", "Welle", "Weste",
+            "Wille", "Winde", "Wiese", "Wunde", "Yacht", "Zange", "Zebra", "Zecke", "Zehnt", "Zuzug"
     };
 
-    // Erweiterte Liste mit zusätzlichen Wörtern, hier als Wortliste 2
-    private static final String[] WOERTER_2 = {
-            "buben", "stets", "börde", "toner", "asien", "braun", "ernte", "bambi", "unart", "walze",
-            "äffin", "gilde", "unten", "wohin", "namen", "negev", "abweg", "stock", "rache", "aktie",
-            "köder", "lepra", "allwo", "imker", "solei", "still", "fünft", "dampf", "köche", "blank",
-            "berge", "hunde", "woher", "abhol", "genus", "alice", "hydra", "drüse", "masse", "puder",
-            "vater", "korso", "tritt", "mönch", "küche", "moral", "milbe", "immun", "julia", "armut",
-            "quasi", "pfeil", "alben", "kenia", "bande", "hinab", "walöl", "block", "indiz", "ämter",
-            "delta", "kupon", "gefäß", "rasse", "tasse", "ragen", "geübt", "stamm", "sagen", "hatte",
-            "liege", "slawe", "hobby", "trunk", "makro", "tegel", "zehnt", "sinti", "kirch", "miami",
-            "werks", "öfter", "carol", "üppig", "kranz", "ekzem", "nutte", "feile", "sieht", "lägen",
-            "sprüh", "krank", "angab", "spröd", "udssr", "täter", "after", "bohne", "wicke", "fuder",
-            "trost", "bucht", "allzu", "halte", "blieb", "berta", "ricke", "sühne", "hager", "preis",
-            "spore", "klemm", "diwan", "bauer", "paket", "posse", "cyber", "kleie", "speer", "krieg",
-            "ungar", "diana", "oblag", "duell", "nötig", "vorab", "fuchs", "adeln", "kopie", "meist",
-            "mimik", "stemm", "müsli", "meran", "jubel", "setup", "patch", "ernst", "statt", "saldo",
-            "bulle", "nagel", "törin", "satin", "sowie", "sippe", "bonze", "hüben", "stößt", "eklat",
-            "getan", "krass", "abhör", "honda", "carlo", "lager", "todes", "affen", "quark", "kuhle",
-            "trafo", "komet", "arten", "pulle", "devot", "obhut", "prima", "intus", "zäune", "beere",
-            "gerda", "liszt", "stunt", "mumps", "kroch", "ideen", "zudem", "bläst", "tönen", "götze",
-            "blink", "beule", "fritz", "zuzug", "weben", "dogge", "kelch", "edeka", "rubel", "dämme",
-            "fehde", "föhre", "hertz", "organ", "tonne", "exakt", "grace", "marge", "wovor", "garde",
-            "xerox", "harry", "faxen", "hinzu", "pinie", "dosen", "spann", "kamin", "spien", "motiv",
-            "musst", "gämse", "kater", "bauen", "szene", "büste", "argon", "cluny", "trist", "irrig",
-            "zaire", "tafel", "tisch", "jaffa", "docht", "schul", "islam", "putin", "enzym", "loten",
-            "chaos", "sooft", "start", "getto", "tröge", "alert", "inuit", "zeige", "eisig", "hagen",
-            "birne", "kasse", "cobol", "kraus", "sülze", "otmar", "curie", "fürze", "kubus", "forsa",
-            "karte", "löwen", "kabul", "modus", "solon", "thema", "doris", "derer", "schal", "rasch",
-            "torus", "kohle", "biker", "rufen", "birke", "riete", "läuft", "zuber", "flaum", "nsdap",
-            "datum", "bluff", "äthyl", "pokal", "leier", "engel", "lotse", "kaaba", "pudel", "fahne",
-            "hunne", "bongo", "coats", "vegan", "vögel", "dasaß", "petra", "prime", "pylon", "limit",
-            "jäten", "chart", "wanst", "anbei", "adler", "rapid", "drink", "mathe", "abzug", "rußig",
-            "umher", "final", "basis", "hören", "essen", "hörig", "choke", "würge", "waise", "tarif",
-            "lende", "revue", "davon", "fülle", "anzog", "kurie", "sahne", "heben", "elfen", "streu",
-            "anker", "venen", "gebar", "beruf", "leder", "waren", "milch", "fazit", "fermi", "aurel",
-            "umbra", "droge", "neuer", "acker", "fegen", "ruhig", "sound", "tempo", "rumpf", "bemaß",
-            "bowle", "schah", "markt", "radar", "glitt", "fulda", "ocker", "first", "untat", "canon",
-            "foyer", "vogts", "fließ", "bühne", "demut", "fisch", "neffe", "umsah", "kurve", "summe",
-            "mafia", "paris", "leber", "busch", "blöße", "äugen", "zutat", "grund", "tuend", "pfarr",
-            "blase", "baden", "laden", "erlös", "qubit", "tango", "urahn", "legal", "zecke", "peter",
-            "braue", "außen", "merck", "sudan", "liebe", "orgie", "abtei", "samba", "dürer", "tenne",
-            "mäuse", "dover", "hotel", "haifa", "glatt", "fäule", "volvo", "joule", "rabat", "pfote",
-            "gehör", "stuck", "glück", "vista", "rasen", "mutig", "ebnen", "fußen", "sicht", "weide",
-            "weihe", "ulken", "fatal", "klotz", "atlas", "pille", "reise", "rotor", "wunde", "rappe",
-            "media", "rosen", "desto", "äther", "wagen", "wache", "nizza", "rosig", "labor", "scheu",
-            "celle", "prost", "hanse", "lader", "geben", "spind", "kanne", "opfer", "knabe", "gemüt",
-            "linus", "spree", "wedel", "futur", "ehest", "sohle", "wirst", "stück", "blume", "skalp",
-            "teint", "grenz", "luxus", "vorig", "anion", "platz", "metro", "selbe", "beute", "annie",
-            "engen", "säbel", "kleid", "antat", "daher", "späne", "profi", "blüte", "letzt", "lasso",
-            "emsig", "sinus", "toben", "stolz", "stieß", "enorm", "jacht", "hinan", "damen", "watte",
-            "unmut", "weder", "wange", "polle", "pfund", "trotz", "genug", "probe", "dafür", "spule",
-            "kuren", "laser", "hitze", "boxer", "socke", "notar", "sauce", "arche", "porno", "banal",
-            "gödel", "worms", "junge", "stase", "dosis", "hobby", "löse"
-    };
-
+    // Zufallszahlengenerator für die Auswahl eines zufälligen Wortes
+    // final, da das Wort einmalig beim Start der Anwendung ausgewählt wird
     private static final Random RANDOM = new Random();
 
-    /**
-     * Wählt ein zufälliges Wort aus der Liste aus.
-     *
-     * @return Ein zufälliges Wort in Großbuchstaben
-     */
-
-    // Methode zum Abrufen eines zufälligen Wortes aus der Liste; WOERTER_1 oder WOERTER_2 können verwendet werden
+    // Methode getRandomWord(), die das vorher ausgewählte Wort als String zurückgibt
     public static String getRandomWord() {
-        int index = RANDOM.nextInt(WOERTER_2.length);
-        return WOERTER_2[index].toUpperCase();
-    }
+        // Erstellung eines Index mit einem Wort aus der Liste
+        // RANDOM.nextInt wählt eine zufällige Position aus der Liste aus mit dem jeweiligen Wort
+        int index = RANDOM.nextInt(WOERTER.length);
 
+        // Rückgabe des Wortes in Großbuchstaben
+        return WOERTER[index].toUpperCase();
+    }
 }
