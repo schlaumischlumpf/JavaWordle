@@ -13,6 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -39,7 +40,6 @@ public class UI extends Application {
     public static boolean openSettingsOnStart = false;
 
     static Variables var = new Variables();
-    Label response;
     ToggleGroup tg;
     private VBox rootNode;
 
@@ -78,7 +78,7 @@ public class UI extends Application {
         rootNode.getChildren().clear();
 
         // Titel des Fensters
-        stage.setTitle("Auswahl der Spielmodi");
+        stage.setTitle("Hauptmenü");
 
         // Label für Spielmodusauswahl
         Label auswahl = new Label("Wähle einen Spielmodus");
@@ -96,11 +96,11 @@ public class UI extends Application {
         RadioButton rbModus3 = new RadioButton("Challenge");
 
         // Festlegung der Fenstergröße
-        stage.setHeight(400);
+        stage.setHeight(450);
         stage.setWidth(500);
 
         // Minimale Fenstergröße soll der festgelegten Größe entsprechen
-        stage.setMinHeight(400);
+        stage.setMinHeight(450);
         stage.setMinWidth(500);
 
         tg = new ToggleGroup();
@@ -128,10 +128,29 @@ public class UI extends Application {
         // Öffnen des Einstellungsmenüs bei Klick auf Einstellungsmenü
         openSettings.setOnAction(_ -> showSettingsMenu(stage));
 
-        HBox radioButtons = new HBox(10, rbModus1, rbModus2, rbModus3);
+        HBox radioButtons = new HBox(25, rbModus1, rbModus2, rbModus3);
         radioButtons.setAlignment(Pos.CENTER);
         VBox.setMargin(openSettings, new Insets(50, 0, 0, 0));
-        rootNode.getChildren().addAll(auswahl, radioButtons, btnConfirm, openSettings);
+
+        // Vertikale Abstandshalter erstellen
+        Region spacer1 = new Region();
+        spacer1.setPrefHeight(5);
+        Region spacer2 = new Region();
+        spacer2.setPrefHeight(5);
+        Region spacer3 = new Region();
+        spacer3.setPrefHeight(20);
+
+        // Elemente zum rootNode hinzufügen
+        rootNode.getChildren().addAll(
+                auswahl,
+                spacer1,
+                radioButtons,
+                spacer2,
+                btnConfirm,
+                spacer3,
+                openSettings
+        );
+
         stage.centerOnScreen();
     }
 
@@ -178,7 +197,9 @@ public class UI extends Application {
         rootNode.getChildren().clear();
         stage.setTitle("Einstellungen");
 
-        // Hier den Inhalt des Einstellungsmenüs erstellen (aus der settings-Klasse)
+        Label settingsLabel = new Label("Allgemeine Einstellungen");
+        settingsLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+
         CheckBox debugModeCheckBox = new CheckBox("Debug-Modus aktivieren");
         debugModeCheckBox.setSelected(Variables.debugMode);
         debugModeCheckBox.setOnAction(_ -> Variables.debugMode = debugModeCheckBox.isSelected());
@@ -186,6 +207,10 @@ public class UI extends Application {
         CheckBox disableDuplicatesCheckBox = new CheckBox("Doppelte Buchstaben deaktivieren (nicht verfügbar)");
         disableDuplicatesCheckBox.setSelected(disableDuplicateLetters);
         disableDuplicatesCheckBox.setOnAction(_ -> disableDuplicateLetters = disableDuplicatesCheckBox.isSelected());
+
+        // Label über dem Slider
+        Label sliderLabel = new Label("Timereinstellung für den Challenge-Modus");
+        sliderLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
 
         // Slider, mit dem man die Timerzeit einstellen kann
         Slider setTimerValue = new Slider(30, 360,30);
@@ -222,15 +247,29 @@ public class UI extends Application {
 
         VBox settingsContent = new VBox(20);
         settingsContent.setAlignment(Pos.CENTER);
+
         Label lableTitle = new Label("Einstellungen");
         lableTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
+
+        Region spacer5 = new Region();
+        spacer5.setPrefHeight(5);
+        Region spacer10 = new Region();
+        spacer10.setPrefHeight(10);
+
+
+        // Alle UI-Elemente zum Settings-Container hinzufügen
         settingsContent.getChildren().addAll(
+                settingsLabel,
                 debugModeCheckBox,
                 disableDuplicatesCheckBox,
+                spacer10,
+                sliderLabel,
                 sliderBox,
                 sliderValueLabel,
+                spacer5,  // 5px Abstand
                 btnBack
         );
+
 
         rootNode.getChildren().add(settingsContent);
         stage.centerOnScreen();
