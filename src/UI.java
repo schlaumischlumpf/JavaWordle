@@ -1,8 +1,9 @@
 // UI.java
-// Stand: 22.04.2025
+// Stand: 23.04.2025
 // Autoren: Lennart und Moritz
 
 package src;
+
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -20,13 +21,13 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import ressource.*;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import ressource.CheckAlgo;
-import ressource.GameField;
-import ressource.Wortliste;
-import static src.Variables.disableDuplicateLetters;
+
+import static ressource.Variables.disableDuplicateLetters;
 
 /*
     Über diese Klasse:
@@ -39,28 +40,41 @@ public class UI extends Application {
     // Boolean, damit die Einstellungen nicht beim Starten der Anwendung geöffnet werden
     public static boolean openSettingsOnStart = false;
 
-    static Variables var = new Variables();
+    // Erstellung einer ToggleGroup
     ToggleGroup tg;
-    private VBox rootNode;
 
+    // Variablen für das Precaching
+    public String preloadedTargetWord;
+    public int preloadedGameType = 1; // Standard: Normal-Modus
+
+    // Container für die vertikale Anordnung der Elemente
+    private static VBox rootNode;
+
+    // Icon für die Anwendung oben im Fenster
     private void setStageIcon(Stage stage) {
-        try {
-            Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ressource/logo.png")));
-            stage.getIcons().add(icon);
-        } catch (Exception e) {
-            if (Variables.debugMode) {
-                System.err.println("Fehler beim Laden des Icons: " + e.getMessage());
-            }
-        }
+        Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ressource/logo.png")));
+        stage.getIcons().add(icon);
     }
 
+    // Startmethode der JavaFX-Anwendung
     @Override
     public void start(Stage stage) {
+        // Fenstertitel
         stage.setTitle("Wordle");
+
+        // Vertikaler Layout-Container mit einem Abstand von 10px
         rootNode = new VBox(10);
+
+        // Padding für den Container; Anordnung im Center der Stage
         rootNode.setAlignment(Pos.CENTER);
+
+        // Neue Scene mit dem Container und einer Breite von 600px und Höhe von 400px
         Scene scene = new Scene(rootNode, 600, 400);
+
+        // Hinzufügen der Scene zur Stage
         stage.setScene(scene);
+
+        // Icon wird hier für die Stage festgelegt
         setStageIcon(stage);
 
         // Prüfen, ob Einstellungsmenü direkt geöffnet werden soll; true = öffnen, false = Wordle direkt starten
@@ -70,9 +84,11 @@ public class UI extends Application {
             showMainMenu(stage);
         }
 
+        // Die Stage wird geöffnet
         stage.show();
     }
 
+    // Methode zum Erstellen des Hauptmenüs
     private void showMainMenu(Stage stage) {
         // Hauptmenü leeren
         rootNode.getChildren().clear();
@@ -103,33 +119,47 @@ public class UI extends Application {
         stage.setMinHeight(450);
         stage.setMinWidth(500);
 
+        // Neue ToggleGroup für die Radiobuttons
         tg = new ToggleGroup();
+
+        // Zuweisung der ToggleGroup zu den Radiobuttons
         rbModus1.setToggleGroup(tg);
         rbModus2.setToggleGroup(tg);
         rbModus3.setToggleGroup(tg);
         rbModus1.setSelected(true);
 
+        // Listener für Radiobuttons, die das Zielwort vorladen
+        rbModus1.setOnAction(_ -> preloadTargetWord(1));
+        rbModus2.setOnAction(_ -> preloadTargetWord(2));
+        rbModus3.setOnAction(_ -> preloadTargetWord(3));
 
+        // Da rbModus1 standardmäßig ausgewählt ist, initial vorladen
+        preloadTargetWord(1);
+
+        // Aktion bei Klick auf den Startbutton
         btnConfirm.setOnAction(_ -> {
             // Speicherung des ausgewählten Radiobuttons
             RadioButton rb = (RadioButton) tg.getSelectedToggle();
-
-            // Bestimmung der Spielmodiauswahl mit switch-case-Abfrage
             switch (rb.getText()) {
-                case "Normal" -> var.gameType = 1; // gameType 1 = normales Wordle mit 6 Versuchen und ohne Timer
-                case "Schwer" -> var.gameType = 2; // gameType 2 = schweres Wordle mit 4 Versuchen und ohne Timer
-                case "Challenge" -> var.gameType = 3; // gameType 3 = Challenge mit 6 Versuchen und Timer (anpassbar)
+                case "Normal" -> preloadedGameType = 1;
+                case "Schwer" -> preloadedGameType = 2;
+                case "Challenge" -> preloadedGameType = 3;
             }
 
-            // Zum Spielbildschirm wechseln
+            // Zum Spielbildschirm wechseln - der vorgeladene Wert wird verwendet
             showGameScreen(stage);
         });
 
         // Öffnen des Einstellungsmenüs bei Klick auf Einstellungsmenü
         openSettings.setOnAction(_ -> showSettingsMenu(stage));
 
+        // Horizontale Anordnung der Radiobuttons in horizontalem Layoutcontainer
         HBox radioButtons = new HBox(25, rbModus1, rbModus2, rbModus3);
+
+        // Anordnung der Radiobuttons in Fenstermitte
         radioButtons.setAlignment(Pos.CENTER);
+
+        // 50px Abstand über dem Einstellungsbutton
         VBox.setMargin(openSettings, new Insets(50, 0, 0, 0));
 
         // Vertikale Abstandshalter erstellen
@@ -151,45 +181,64 @@ public class UI extends Application {
                 openSettings
         );
 
+        // Fenster zentrieren
         stage.centerOnScreen();
     }
 
+    private void preloadTargetWord(int gameType) {
+        preloadedGameType = gameType;
+        Variables.resetTargetWord();
+        preloadedTargetWord = Wortliste.getRandomWord();
+    }
+
     private void showGameScreen(Stage stage) {
-        // Fenster vor dem UI-Update konfigurieren
-        stage.setTitle("Wordle");
-        stage.setWidth(500);
-        stage.setHeight(700);
-        stage.setMinWidth(500);
-        stage.setMinHeight(700);
-        setStageIcon(stage);
-
-        // UI-Update-Logik verzögern
+        // UI-Update-Logik verzögern durch Platform.runLater
         Platform.runLater(() -> {
-            rootNode.getChildren().clear();
+            // Fenstereigenschaften setzen
+            stage.setTitle("Wordle");
+            stage.setWidth(500);
+            stage.setHeight(700);
+            stage.setMinWidth(500);
+            stage.setMinHeight(700);
+            setStageIcon(stage);
 
-            // Eigenes GameField mit Überprüfungslogik erstellen
+            //Debug-Label zurücksetzen
+            Debug.hideDebugInfo(rootNode);
+
+            // UI vorbereiten
+            rootNode.getChildren().clear();
             VBox gameLayout = new VBox(20);
             gameLayout.setAlignment(Pos.CENTER);
 
-            // GameField erstellen basierend auf dem Spielmodus
-            Variables.resetTargetWord();
-
-            String targetWord = Wortliste.getRandomWord();
-            GameFieldWithCheck gameField = switch (var.gameType) {
-                case 2 -> new GameFieldWithCheck(targetWord, stage, this, 4, false);
-                case 3 -> new GameFieldWithCheck(targetWord, stage, this, 6, true);
-                default -> new GameFieldWithCheck(targetWord, stage, this, 6, false);
+            // Vorgeladenes Wort und Spieltyp verwenden, statt neu zu generieren
+            String targetWord = preloadedTargetWord;
+            GameFieldWithCheck gameField = switch (preloadedGameType) {
+                case 2 -> new GameFieldWithCheck(targetWord, stage, this, 4, false, rootNode);
+                case 3 -> new GameFieldWithCheck(targetWord, stage, this, 6, true, rootNode);
+                default -> new GameFieldWithCheck(targetWord, stage, this, 6, false, rootNode);
             };
-
-            // Spielmodus-spezifische Einstellungen
 
             Button btnBackToMenu = new Button("Zurück zum Hauptmenü");
             btnBackToMenu.setOnAction(_ -> showMainMenu(stage));
 
             gameLayout.getChildren().addAll(gameField, btnBackToMenu);
             rootNode.getChildren().add(gameLayout);
+            stage.centerOnScreen();
+
+            // Sofort neues Wort für nächste Runde vorladen
+            preloadNextWord();
         });
-        stage.centerOnScreen();
+    }
+
+    // Methode zum Vorladen des nächsten Worts im Hintergrund
+    private void preloadNextWord() {
+        Thread preloadThread = new Thread(() -> {
+            // Im Hintergrund neues Wort für nächste Runde vorbereiten
+            Variables.resetTargetWord();
+            preloadedTargetWord = Wortliste.getRandomWord();
+        });
+        preloadThread.setDaemon(true);
+        preloadThread.start();
     }
 
     public void showSettingsMenu(Stage stage) {
@@ -213,11 +262,11 @@ public class UI extends Application {
         sliderLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
 
         // Slider, mit dem man die Timerzeit einstellen kann
-        Slider setTimerValue = new Slider(30, 360,30);
+        Slider setTimerValue = new Slider(30, 360,210);
         setTimerValue.setMajorTickUnit(30); // Schrittweite
         setTimerValue.setMinorTickCount(0);
         setTimerValue.setSnapToTicks(true);
-        setTimerValue.setPrefWidth(350); // Der Slider soll etwa 70-80% des Fensters einnehmen
+        setTimerValue.setPrefWidth(350); // Der Slider soll etwa 70-80 % des Fensters einnehmen
         setTimerValue.setShowTickMarks(true);
         setTimerValue.setShowTickLabels(false);
 
@@ -231,7 +280,7 @@ public class UI extends Application {
         sliderBox.getChildren().addAll(minLabel, setTimerValue, maxLabel);
 
         // Label für die Werte
-        Label sliderValueLabel = new Label("Eingestellte Timerzeit: 30 Sekunden");
+        Label sliderValueLabel = new Label("Eingestellte Timerzeit: 210 Sekunden");
 
         // Wert-Listener für den Sliderwert
         setTimerValue.valueProperty().addListener((_, _, newValue) -> {
@@ -277,22 +326,26 @@ public class UI extends Application {
 
     // Eigene GameField-Klasse mit Überprüfungslogik
     private static class GameFieldWithCheck extends GameField {
-        private final String targetWord; // Zielwort
+        private String targetWord; // Zielwort
         private final Stage parentStage;  // Referenz auf das Hauptfenster
         private final UI uiReference;     // Referenz auf die UI-Klasse
         private final boolean withTimer; // Boolean für Timer
         private final Set<Character> incorrectLetters = new HashSet<>();
         private int currentRow = 0; // Aktuelle Zeile; wird bei jedem Versuch erhöht, beginnt mit 0
+        private final VBox rootNode; // Referenz auf den VBox-Containers
         private Timeline timer; // Timer-Objekt
         private Label timerLabel; // Label für den Timer
         private int secondsRemaining; // verbleibende Sekunden
 
-        public GameFieldWithCheck(String targetWord, Stage stage, UI uiReference, int rows, boolean withTimer) {
+
+
+        public GameFieldWithCheck(String targetWord, Stage stage, UI uiReference, int rows, boolean withTimer, VBox rootNode) {
             super(rows);
             this.targetWord = targetWord.toUpperCase();
             this.parentStage = stage;
             this.uiReference = uiReference;
             this.withTimer = withTimer;
+            this.rootNode = rootNode;
 
             // TextField-Listener überschreiben
             TextField inputField = getInputField();
@@ -318,6 +371,23 @@ public class UI extends Application {
             // Input-Handler überschreiben
             submitButton.setOnAction(_ -> checkInput(inputField.getText()));
             inputField.setOnAction(_ -> checkInput(inputField.getText()));
+            Debug.showDebugWindow(targetWord,
+                // Callback zum Ändern des Zielworts
+                newWord -> this.targetWord = newWord,
+                // Callback zum Neustarten des Spiels
+                () -> uiReference.showGameScreen(parentStage),
+                // Callback zum Löschen der letzten Eingabe
+                () -> {
+                    if (currentRow > 0) {
+                        currentRow--;
+                        // Zellen der aktuellen Zeile zurücksetzen
+                        for (int col = 0; col < 5; col++) {
+                            setLetter(currentRow, col, "");
+                            setCellColor(currentRow, col, Color.WHITE);
+                        }
+                    }
+                }
+            );
         }
 
         private void setupTimer() {
@@ -353,6 +423,20 @@ public class UI extends Application {
         }
 
         private void checkInput(String input) {
+            // Prüfen auf Debug-Kommando
+            if (Debug.isDebugInput(input)) {
+                // Hier wird das Debug-Fenster geöffnet statt des Labels
+                Debug.showDebugWindow(targetWord,
+                        // Callback zum Ändern des Zielworts
+                        newWord -> this.targetWord = newWord,
+                        // Callback zum Neustarten des Spiels
+                        () -> uiReference.showGameScreen(parentStage)
+                );
+                TextField inputField = getInputField();
+                inputField.clear();
+                return;
+            }
+
             // Lokale Kopie der Eingabe erstellen
             final String normalizedInput = input.toUpperCase().trim();
 
@@ -366,6 +450,8 @@ public class UI extends Application {
                     // Buchstaben setzen
                     for (int col = 0; col < 5; col++) {
                         setLetter(currentRow, col, String.valueOf(normalizedInput.charAt(col)));
+                        // Verwendete Buchstaben zum Debug-Fenster hinzufügen
+                        Debug.addUsedLetter(normalizedInput.charAt(col));
                     }
 
                     // Wort überprüfen und Farben setzen
@@ -411,12 +497,13 @@ public class UI extends Application {
                 timer.stop();
             }
 
-            // Hauptfenster für die Ergebnisanzeige umgestalten
-            VBox gameLayout = (VBox) parentStage.getScene().getRoot();
-            gameLayout.getChildren().clear();
+            // Debug-Fenster schließen, wenn Spiel beendet
+            Debug.closeDebugWindow();
 
-            gameLayout.setAlignment(Pos.CENTER);
-            gameLayout.setPadding(new Insets(20));
+            // Hauptfenster für die Ergebnisanzeige umgestalten
+            rootNode.getChildren().clear();
+            rootNode.setAlignment(Pos.CENTER);
+            rootNode.setPadding(new Insets(20));
 
             Label resultLabel = new Label(won ?
                     "Herzlichen Glückwunsch!\nDu hast das gesuchte Wort erraten!" :
@@ -443,7 +530,7 @@ public class UI extends Application {
             // Vertikalen Abstand hinzufügen
             VBox.setMargin(buttonBox, new Insets(30, 0, 0, 0));
 
-            gameLayout.getChildren().addAll(resultLabel, buttonBox);
+            rootNode.getChildren().addAll(resultLabel, buttonBox);
         }
     }
 }

@@ -5,4 +5,5 @@ module WordleJava2 {
     exports src;
     exports ressource;
     opens src to javafx.fxml;
+    opens ressource to javafx.fxml;
 }
