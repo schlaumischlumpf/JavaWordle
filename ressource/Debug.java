@@ -34,6 +34,8 @@ public class Debug {
     private static Runnable undoLastInputCallback;
     private static Timeline timer;
     private static int seconds = 0;
+    private static CheckBox showWordCheckBox;
+    private static String currentTargetWord;
 
     /**
      * Prüft, ob der Debug-Modus aktiviert ist und das Debug-Wort eingegeben wurde
@@ -196,9 +198,21 @@ public class Debug {
         return false;
     }
 
+    // Methode, mit der das Lösungswort angezeigt/ausgeblendet werden kann
+    private static void updateWordVisibility() {
+        if (wordLabel != null && currentTargetWord != null) {
+            if (showWordCheckBox.isSelected()) {
+                wordLabel.setText("Lösungswort: " + currentTargetWord);
+            } else {
+                wordLabel.setText("Lösungswort: *****");
+            }
+        }
+    }
+
     private static void createDebugWindow(String targetWord) {
         // Buchstaben zurücksetzen
         resetUsedLetters();
+        currentTargetWord = targetWord;
 
         debugStage = new Stage();
         debugStage.setTitle("Wordle Debug-Tool");
@@ -221,8 +235,13 @@ public class Debug {
         VBox infoContent = new VBox(10);
         infoContent.setPadding(new Insets(10));
 
-        wordLabel = new Label("Lösungswort: " + targetWord);
+        wordLabel = new Label("Lösungswort: *****");
         wordLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+
+        // Möglichkeit, Lösungswort mit Checkbox einzublenden
+        showWordCheckBox = new CheckBox("Lösungswort anzeigen");
+        showWordCheckBox.setSelected(false);
+        showWordCheckBox.setOnAction(_ -> updateWordVisibility());
 
         lettersLabel = new Label("Genutzte Buchstaben: ");
         lettersLabel.setFont(Font.font("Segoe UI", 14));
@@ -261,7 +280,7 @@ public class Debug {
             }
         });
 
-        infoContent.getChildren().addAll(wordLabel, lettersLabel, timerLabel, buttonBox);
+        infoContent.getChildren().addAll(wordLabel, showWordCheckBox, lettersLabel, timerLabel, buttonBox);
         infoTab.setContent(infoContent);
 
         // Tab 2: Wort ändern
@@ -386,29 +405,23 @@ public class Debug {
         hintTextArea.setWrapText(true);
 
         showFirstLetterButton.setOnAction(_ -> {
-            if (wordLabel != null && wordLabel.getText().startsWith("Lösungswort: ")) {
-                String currentWord = wordLabel.getText().substring(13);
-                if (!currentWord.isEmpty()) {
-                    hintTextArea.setText("Der erste Buchstabe des Lösungswortes ist: " + currentWord.charAt(0));
-                }
+            if (currentTargetWord != null && !currentTargetWord.isEmpty()) {
+                hintTextArea.setText("Der erste Buchstabe des Lösungswortes ist: " + currentTargetWord.charAt(0));
             }
         });
 
         analyzeWordButton.setOnAction(_ -> {
-            if (wordLabel != null && wordLabel.getText().startsWith("Lösungswort: ")) {
-                String currentWord = wordLabel.getText().substring(13);
-                if (!currentWord.isEmpty()) {
-                    int vowels = 0;
-                    for (char c : currentWord.toCharArray()) {
-                        if ("AEIOUÄÖÜ".indexOf(c) >= 0) {
-                            vowels++;
-                        }
+            if (currentTargetWord != null && !currentTargetWord.isEmpty()) {
+                int vowels = 0;
+                for (char c : currentTargetWord.toCharArray()) {
+                    if ("AEIOUÄÖÜ".indexOf(c) >= 0) {
+                        vowels++;
                     }
-                    hintTextArea.setText(String.format(
-                            "Wortanalyse:\n- Länge: %d Buchstaben\n- Vokale: %d\n- Konsonanten: %d",
-                            currentWord.length(), vowels, currentWord.length() - vowels
-                    ));
                 }
+                hintTextArea.setText(String.format(
+                        "Wortanalyse:\n- Länge: %d Buchstaben\n- Vokale: %d\n- Konsonanten: %d",
+                        currentTargetWord.length(), vowels, currentTargetWord.length() - vowels
+                ));
             }
         });
 
@@ -440,8 +453,13 @@ public class Debug {
      * Aktualisiert die Debug-Informationen
      */
     public static void updateDebugInfo(String targetWord) {
+        currentTargetWord = targetWord;
         if (wordLabel != null) {
-            wordLabel.setText("Lösungswort: " + targetWord);
+            if (showWordCheckBox != null && showWordCheckBox.isSelected()) {
+                wordLabel.setText("Lösungswort: " + targetWord);
+            } else {
+                wordLabel.setText("Lösungswort: *****");
+            }
         }
     }
 
@@ -468,21 +486,4 @@ public class Debug {
         // Leere Methode für Abwärtskompatibilität
     }
 
-    /**
-     * Prüft ob Debug-Modus aktiv ist und zeigt automatisch das Debug-Fenster
-     */
-    public static void checkAndShowDebugWindow(String targetWord, Consumer<String> changeWordCallback, Runnable restartCallback) {
-        if (Variables.debugMode) {
-            showDebugWindow(targetWord, changeWordCallback, restartCallback);
-        }
-    }
-
-    /**
-     * Prüft ob Debug-Modus aktiv ist und zeigt automatisch das Debug-Fenster (mit Undo-Funktion)
-     */
-    public static void checkAndShowDebugWindow(String targetWord, Consumer<String> changeWordCallback, Runnable restartCallback, Runnable undoCallback) {
-        if (Variables.debugMode) {
-            showDebugWindow(targetWord, changeWordCallback, restartCallback, undoCallback);
-        }
-    }
 }
