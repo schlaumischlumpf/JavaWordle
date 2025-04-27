@@ -32,4 +32,30 @@ Anschließend kann die Anwendung mit der Ausführungsdatei `WordleJava2.jar` ges
 Hierfür wird keine JavaFX Installation benötigt, da die benötigten JavaFX-Bibliotheken bereits in der JAR-Datei enthalten sind.
 
 ## Debug-Tool
-xyz
+Das Debug-Tool ist ein umfangreiches Tool, das die Möglichkeit bietet, verschiedene Aspekte des Spiels zu debuggen. Es bietet eine Vielzahl von Funktionen in verschiedenen Tabs, diese sind:
+- Tab "Spielinfo"
+  - Anzeige des gesuchten Wortes
+  - Anzeige der genutzten Buchstaben
+  - Anzeige der Spielzeit
+  - Möglichkeit, das Spiel mit einem neuen Wort neuzustarten
+  - Möglichkeit, die letzte Eingabe im Wordle zu löschen
+- Tab "Wort ändern"
+  - Möglichkeit, das gesuchte Wort manuell zu ändern
+- Tab "Wörterbuch-Prüfung"
+  - Prüfung, ob ein Wort in der Wörterbuch-Datei existiert
+  - Ausgabe eines Hinweises, ob das Wort existiert oder nicht → Hinweis: keine Prüfung auf Buchstabenlänge
+- Tab "Statistik"
+  - Anzahl der Neustarts
+  - Anzahl der widerrufenen Eingaben
+  - Anzahl der Wortänderungen
+  - Anzahl der Wörterbuch-Prüfungen
+  - Anzahl der Debug-Tool-Sitzungen
+  - Möglichkeit, die Statistik zu aktualisieren/zurückzusetzen
+  → Speicherung der Stats in `debug_stats.txt` unter `ressource/debug_stats.txt`
+- Tab "Hilfe & Tipps"
+  - Hinweise, die der Lösungsfindung dienen
+    - Ersten Buchstaben des gesuchten Wortes anzeigen
+    - Wortanalyse durchführen →
+      - Länge des Wortes
+      - Anzahl der Vokale im Wort
+      - Anzahl der Konsonanten im Wort
