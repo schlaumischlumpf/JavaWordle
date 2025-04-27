@@ -17,10 +17,12 @@ WordleFX ist eine Desktop-Anwendung, die das populäre Wortspiel Wordle imitiert
   - Zeitbegrenzung durch den Timer 
   - Timer in Einstellungen anpassbar
 - Umfangreiches Debug-Tool
-  - mehr Informationen dazu unter Debug-Tool
+  - mehr Informationen dazu unter [Debug-Tool](#debug-tool)
+
 ## Anforderungen
 - Java 17 oder höher
 - optional: JavaFX 19 oder höher
+
 ## Installation
 Das Projekt kann installiert werden, indem das Repository geklont wird. 
 ```
@@ -28,3 +30,6 @@ Das Projekt kann installiert werden, indem das Repository geklont wird.
 ```
 Anschließend kann die Anwendung mit der Ausführungsdatei `WordleJava2.jar` gestartet werden. Diese befindet sich im Ordner `out/artifacts/WordleJava2_jar` des Projekts. 
 Hierfür wird keine JavaFX Installation benötigt, da die benötigten JavaFX-Bibliotheken bereits in der JAR-Datei enthalten sind.
+
+## Debug-Tool
+xyz
