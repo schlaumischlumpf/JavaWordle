@@ -1,0 +1,25 @@
+/* Animation für Button-Hover */
+.button {
+    -fx-background-color: #e6e6e6;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-border-width: 0;
+    -fx-effect: null;
+    -fx-transition: all 0.3s ease-in-out;
+}
+
+/* Stil für die Tastatur-Buttons */
+.keyboard-button {
+    -fx-pref-width: 40px;
+    -fx-pref-height: 40px;
+}
+
+/* Hervorgehobene Zelle */
+.game-cell-highlighted {
+    -fx-border-color: #999b9e;
+}
+
+/* Änder die erste Szene */
+.root {
+    -fx-background-color: #000000; /* Änder die Hintergundfarbe *
+}
