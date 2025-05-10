@@ -1,2 +1,0 @@
-sessions:3
-wordChecks:2
