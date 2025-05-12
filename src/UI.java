@@ -1,5 +1,5 @@
 // UI.java
-// Stand: 23.04.2025
+// Stand: 12.05.2025
 // Autoren: Lennart und Moritz
 
 package src;
@@ -956,6 +956,28 @@ public class UI extends Application {
             if (input == null || input.length() != 5) {
                 return; // Eingabe ignorieren, wenn nicht genau 5 Buchstaben
             }
+
+            // Prüfen, ob das Wort in der Wortliste enthalten ist
+            Wortliste wortliste = new Wortliste();
+            if (!wortliste.isInWordList(input)) {
+                // Eingabe ist kein gültiges Wort - Reihe zurücksetzen
+                currentRow--;
+                currentCol = 5;
+
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Ungültiges Wort");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Das Wort \"" + input + "\" ist nicht in der Wortliste enthalten.");
+                    Stage alertStage = (Stage) alert.getDialogPane().getScene().getWindow();
+                    setStageIcon(alertStage);
+                    alert.showAndWait();
+
+                    highlightCurrentCell(); // Aktualisiere das aktuelle Feld
+                });
+                return;
+            }
+
 
             // Aktuellen Zeilenindex speichern, bevor er inkrementiert wird
             final int rowToCheck = currentRow - 1;  // Die zu prüfende Zeile ist die vorherige
