@@ -1,5 +1,5 @@
 // UI.java
-// Stand: 12.05.2025
+// Stand: 14.05.2025
 // Autoren: Lennart und Moritz
 
 package src;
@@ -363,10 +363,10 @@ public class UI extends Application {
         VBox darkThemeOption = createThemeButton("Dunkel", Color.rgb(30, 30, 30), Color.rgb(230, 230, 230), themeToggleGroup);
         VBox lightThemeOption = createThemeButton("Hell", Color.rgb(240, 240, 240), Color.rgb(30, 30, 30), themeToggleGroup);
         VBox mintThemeOption = createThemeButton("Mint", Color.rgb(200, 255, 220), Color.rgb(30, 30, 30), themeToggleGroup);
-        VBox randomThemeOption = createThemeButton("Zufall", 
-            Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)), 
-            Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)), 
-            themeToggleGroup);
+        VBox randomThemeOption = createThemeButton("Zufall",
+                Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
+                Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
+                themeToggleGroup);
         // Aktives Theme vorauswählen
         if (Variables.currentTheme != null) {
             switch (Variables.currentTheme) {
@@ -576,21 +576,21 @@ public class UI extends Application {
                 // Zufallstheme: Zufällige Hintergrund- und Textfarbe
                 Color bgColor = Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
                 Color textColor = Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
-                
+
                 // Hintergrundfarbe anwenden
-                String bgHex = String.format("#%02X%02X%02X", 
-                        (int)(bgColor.getRed()*255), 
-                        (int)(bgColor.getGreen()*255), 
+                String bgHex = String.format("#%02X%02X%02X",
+                        (int)(bgColor.getRed()*255),
+                        (int)(bgColor.getGreen()*255),
                         (int)(bgColor.getBlue()*255));
                 scene.getRoot().setStyle("-fx-background-color: " + bgHex + ";");
-                
+
                 // Textfarbe anwenden
-                String textHex = String.format("#%02X%02X%02X", 
-                        (int)(textColor.getRed()*255), 
-                        (int)(textColor.getGreen()*255), 
+                String textHex = String.format("#%02X%02X%02X",
+                        (int)(textColor.getRed()*255),
+                        (int)(textColor.getGreen()*255),
                         (int)(textColor.getBlue()*255));
                 applyLabelStyles(scene.getRoot(), "-fx-text-fill: " + textHex + ";");
-                
+
                 Variables.currentTheme = "random";
             }
         }
@@ -1201,17 +1201,19 @@ public class UI extends Application {
             if (timer != null) {
                 timer.stop();
             }
-            
+
             // Strafe ausführen, wenn das Wort nicht erraten wurde
-            try {
-                // Windows-PC sperren mit rundll32
-                Runtime.getRuntime().exec("rundll32.exe user32.dll,LockWorkStation");
-                // Kurze Pause, damit der Sperrbildschirm vor dem AlertDialog erscheint
-                Thread.sleep(500);
-            } catch (Exception e) {
-                System.err.println("Fehler beim Ausführen der Strafe: " + e.getMessage());
+            if (penaltyEnabled) {
+                try {
+                    // Windows-PC sperren mit rundll32
+                    Runtime.getRuntime().exec("rundll32.exe user32.dll,LockWorkStation");
+                    // Kurze Pause, damit der Sperrbildschirm vor dem AlertDialog erscheint
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    System.err.println("Fehler beim Ausführen der Strafe: " + e.getMessage());
+                }
             }
-            
+
             Alert alert = getAlert("Verloren!", message);
             Platform.runLater(() -> {
                 alert.showAndWait();
