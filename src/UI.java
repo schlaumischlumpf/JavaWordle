@@ -12,6 +12,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -27,6 +28,8 @@ import ressource.*;
 
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Thread.sleep;
 
@@ -36,8 +39,6 @@ import static java.lang.Thread.sleep;
 public class UI extends Application {
     // Boolean, damit die Einstellungen nicht beim Starten der Anwendung geöffnet werden
     public static boolean openSettingsOnStart = false;
-    // Boolean für die Strafe-Option
-    public static boolean penaltyEnabled = false;
     // Container für die vertikale Anordnung der Elemente im Hauptfenster
     private static VBox rootNode;
     // Dedizierter Thread-Pool für das Vorladen von Wörtern im Hintergrund
@@ -294,10 +295,19 @@ public class UI extends Application {
                 switchPreloadedGameType(stage, targetWord, gameField);
             });
 
-            // Warten, bis das Spielfeld erstellt wurde
+            // CountDownLatch zur Thread-Synchronisation
+            CountDownLatch latch = new CountDownLatch(1);
+
+            Platform.runLater(() -> {
+                // Je nach Spielmodus unterschiedliche GameField-Einstellungen
+                switchPreloadedGameType(stage, targetWord, gameField);
+                latch.countDown(); // Signal, dass Spielfeld erstellt wurde
+            });
+
+            // Auf Fertigstellung warten mit Timeout
             try {
-                while (gameField[0] == null) {
-                    sleep(50);
+                if (!latch.await(2, TimeUnit.SECONDS)) {
+                    System.err.println("Timeout beim Warten auf Spielfelderstellung");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -328,146 +338,151 @@ public class UI extends Application {
     public void showSettingsMenu(Stage stage) {
         // Hauptmenü leeren
         rootNode.getChildren().clear();
-        stage.setTitle("Einstellungen");
 
-        // Überschrift für allgemeine Einstellungen
-        Label settingsLabel = new Label("Allgemeine Einstellungen");
-        settingsLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        // Ladebildschirm anzeigen
+        VBox loadingLayout = new VBox(20);
+        loadingLayout.setAlignment(Pos.CENTER);
 
-        // Checkbox für Debug-Modus
-        CheckBox debugModeCheckBox = new CheckBox("Debug-Modus aktivieren");
-        debugModeCheckBox.setSelected(Variables.debugMode);
-        debugModeCheckBox.setOnAction(_ -> Variables.debugMode = debugModeCheckBox.isSelected());
+        Label loadingLabel = new Label("Einstellungen werden geladen...");
+        loadingLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
 
-        // Tooltip für den Debug-Modus
-        Tooltip debugModeTooltip = new Tooltip("Wenn der Debug-Modus aktiviert ist, öffnet sich das Debug-Tool, was u. a. Änderungen am Wordle erlaubt.");
-        debugModeTooltip.setShowDelay(Duration.millis(500));
-        debugModeCheckBox.setTooltip(debugModeTooltip);
+        ProgressIndicator progress = new ProgressIndicator();
+        progress.setPrefSize(50, 50);
 
-        // Einstellung für Hintergrundfarbe
-        Label selectTheme = new Label("Theme-Auswahl");
-        ToggleGroup themeSelect = new ToggleGroup();
+        loadingLayout.getChildren().addAll(loadingLabel, progress);
+        rootNode.getChildren().add(loadingLayout);
 
-        // Region-Abstandshalter für besseres Layout
-        Region spacer15 = new Region();
-        spacer15.setPrefHeight(20);
+        // Kurze Animation für besseres visuelles Feedback
+        PauseTransition delay = new PauseTransition(Duration.millis(300));
+        delay.setOnFinished(_ -> {
+            rootNode.getChildren().clear();
+            stage.setTitle("Einstellungen");
+            stage.setHeight(700);
 
-        // Überschrift für den Theme-Bereich
-        Label themeLabel = new Label("Design-Einstellungen");
-        themeLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+            // Überschrift für allgemeine Einstellungen
+            Label settingsLabel = new Label("Allgemeine Einstellungen");
+            settingsLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
 
-        // ToggleGroup für die Theme-Buttons erstellen
-        ToggleGroup themeToggleGroup = new ToggleGroup();
+            // Checkbox für Debug-Modus
+            CheckBox debugModeCheckBox = new CheckBox("Debug-Modus aktivieren");
+            debugModeCheckBox.setSelected(Variables.debugMode);
+            debugModeCheckBox.setOnAction(_ -> Variables.debugMode = debugModeCheckBox.isSelected());
 
-        // Die drei Theme-Optionen erstellen
-        VBox darkThemeOption = createThemeButton("Dunkel", Color.rgb(30, 30, 30), Color.rgb(230, 230, 230), themeToggleGroup);
-        VBox lightThemeOption = createThemeButton("Hell", Color.rgb(240, 240, 240), Color.rgb(30, 30, 30), themeToggleGroup);
-        VBox mintThemeOption = createThemeButton("Mint", Color.rgb(200, 255, 220), Color.rgb(30, 30, 30), themeToggleGroup);
-        VBox randomThemeOption = createThemeButton("Zufall",
-                Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
-                Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
-                themeToggleGroup);
-        // Aktives Theme vorauswählen
-        if (Variables.currentTheme != null) {
-            switch (Variables.currentTheme) {
-                case "dark" -> ((RadioButton) darkThemeOption.getChildren().get(2)).setSelected(true);
-                case "light" -> ((RadioButton) lightThemeOption.getChildren().get(2)).setSelected(true);
-                case "mint" -> ((RadioButton) mintThemeOption.getChildren().get(2)).setSelected(true);
-                case "random" -> ((RadioButton) randomThemeOption.getChildren().get(2)).setSelected(true);
-                default -> ((RadioButton) lightThemeOption.getChildren().get(2)).setSelected(true);
+            // Tooltip für den Debug-Modus
+            Tooltip debugModeTooltip = new Tooltip("Wenn der Debug-Modus aktiviert ist, öffnet sich das Debug-Tool, was u. a. Änderungen am Wordle erlaubt.");
+            debugModeTooltip.setShowDelay(Duration.millis(500));
+            debugModeCheckBox.setTooltip(debugModeTooltip);
+
+            // Region-Abstandshalter für besseres Layout
+            Region spacer15 = new Region();
+            spacer15.setPrefHeight(20);
+
+            // Überschrift für den Theme-Bereich
+            Label themeLabel = new Label("Design-Einstellungen");
+            themeLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+
+            // ToggleGroup für die Theme-Buttons erstellen
+            ToggleGroup themeToggleGroup = new ToggleGroup();
+
+            // Die drei Theme-Optionen erstellen
+            VBox lightThemeOption = createThemeButton("Hell", Color.rgb(240, 240, 240), Color.rgb(30, 30, 30), themeToggleGroup);
+            VBox darkThemeOption = createThemeButton("Dunkel", Color.rgb(30, 30, 30), Color.rgb(230, 230, 230), themeToggleGroup);
+            VBox mintThemeOption = createThemeButton("Mint", Color.rgb(200, 255, 220), Color.rgb(30, 30, 30), themeToggleGroup);
+            VBox randomThemeOption = createThemeButton("Zufall",
+                    Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
+                    Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
+                    themeToggleGroup);
+            // Aktives Theme vorauswählen
+            if (Variables.currentTheme != null) {
+                switch (Variables.currentTheme) {
+                    case "dark" -> ((RadioButton) darkThemeOption.getChildren().get(2)).setSelected(true);
+                    case "mint" -> ((RadioButton) mintThemeOption.getChildren().get(2)).setSelected(true);
+                    case "random" -> ((RadioButton) randomThemeOption.getChildren().get(2)).setSelected(true);
+                    default -> ((RadioButton) lightThemeOption.getChildren().get(2)).setSelected(true);
+                }
+            } else {
+                // Standardmäßig helles Theme auswählen
+                ((RadioButton) lightThemeOption.getChildren().get(1)).setSelected(true);
             }
-        } else {
-            // Standardmäßig helles Theme auswählen
-            ((RadioButton) lightThemeOption.getChildren().get(2)).setSelected(true);
-        }
 
-        // Container für die Theme-Buttons erstellen
-        HBox themeOptions = new HBox(20);
-        themeOptions.setAlignment(Pos.CENTER);
-        themeOptions.getChildren().addAll(darkThemeOption, lightThemeOption, mintThemeOption, randomThemeOption);
+            // Container für die Theme-Buttons erstellen
+            HBox themeOptions = new HBox(20);
+            themeOptions.setAlignment(Pos.CENTER);
+            themeOptions.getChildren().addAll(lightThemeOption, darkThemeOption, mintThemeOption, randomThemeOption);
 
-        // Event-Handler für Theme-Änderungen hinzufügen
-        themeToggleGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                applyTheme(stage, ((RadioButton) newValue).getUserData().toString());
-            }
+            // Event-Handler für Theme-Änderungen hinzufügen
+            themeToggleGroup.selectedToggleProperty().addListener((_, _, newValue) -> {
+                if (newValue != null) {
+                    applyTheme(stage, ((RadioButton) newValue).getUserData().toString());
+                }
+            });
+
+            // Label über dem Slider für Timer-Einstellungen
+            Label sliderLabel = new Label("Timer-Einstellung für den Challenge-Modus");
+            sliderLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+
+            // Slider, mit dem man die Timerzeit für Challenge-Modus einstellen kann
+            Slider setTimerValue = getSlider();
+
+            // Container für Slider mit Beschriftungen links und rechts
+            HBox sliderBox = new HBox(10);
+            sliderBox.setAlignment(Pos.CENTER);
+            Label minLabel = new Label("30s"); // Minimaler Wert
+            Label maxLabel = new Label("360s"); // Maximaler Wert
+            sliderBox.getChildren().addAll(minLabel, setTimerValue, maxLabel);
+
+            // Label für die aktuelle Slider-Position (ausgewählte Zeit)
+            Label sliderValueLabel = new Label("Eingestellte Timerzeit: 210 Sekunden");
+
+            // Event-Listener für Änderungen am Slider
+            setTimerValue.valueProperty().addListener((_, _, newValue) -> {
+                int timerValue = newValue.intValue();
+                sliderValueLabel.setText("Eingestellte Timerzeit: " + timerValue + " Sekunden");
+
+                // Eingestellte Zeit in den globalen Variablen speichern
+                Variables.timerSeconds = timerValue;
+            });
+
+            // Button zum Zurückkehren zum Hauptmenü
+            Button btnBack = new Button("Zurück zum Hauptmenü");
+            btnBack.setOnAction(_ -> showMainMenu(stage));
+
+            // Container für alle Einstellungselemente
+            VBox settingsContent = new VBox(20);
+            settingsContent.setAlignment(Pos.CENTER);
+
+            // Hauptüberschrift für die Einstellungsseite
+            Label lableTitle = new Label("Einstellungen");
+            lableTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
+
+            // Abstandshalter für besseres Layout
+            Region spacer5 = new Region();
+            spacer5.setPrefHeight(5);
+            Region spacer10 = new Region();
+            spacer10.setPrefHeight(10);
+
+            // Alle UI-Elemente zum Settings-Container hinzufügen
+            settingsContent.getChildren().addAll(
+                    settingsLabel,
+                    debugModeCheckBox,
+                    spacer10,
+                    sliderLabel,
+                    sliderBox,
+                    sliderValueLabel,
+                    spacer5,  // 5px Abstand
+                    themeLabel,
+                    themeOptions,
+                    spacer15,
+                    btnBack
+            );
+
+            // Container zum Hauptfenster hinzufügen
+            rootNode.getChildren().add(settingsContent);
+
+            // Fenster zentrieren
+            stage.centerOnScreen();
         });
-
-        // Label über dem Slider für Timer-Einstellungen
-        Label sliderLabel = new Label("Timer-Einstellung für den Challenge-Modus");
-        sliderLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-        // Slider, mit dem man die Timerzeit für Challenge-Modus einstellen kann
-        Slider setTimerValue = getSlider();
-
-        // Container für Slider mit Beschriftungen links und rechts
-        HBox sliderBox = new HBox(10);
-        sliderBox.setAlignment(Pos.CENTER);
-        Label minLabel = new Label("30s"); // Minimaler Wert
-        Label maxLabel = new Label("360s"); // Maximaler Wert
-        sliderBox.getChildren().addAll(minLabel, setTimerValue, maxLabel);
-
-        // Label für die aktuelle Slider-Position (ausgewählte Zeit)
-        Label sliderValueLabel = new Label("Eingestellte Timerzeit: 210 Sekunden");
-
-        // Event-Listener für Änderungen am Slider
-        setTimerValue.valueProperty().addListener((_, _, newValue) -> {
-            int timerValue = newValue.intValue();
-            sliderValueLabel.setText("Eingestellte Timerzeit: " + timerValue + " Sekunden");
-
-            // Eingestellte Zeit in den globalen Variablen speichern
-            Variables.timerSeconds = timerValue;
-        });
-
-        // Checkbox für die Strafe-Option
-        CheckBox penaltyCheckBox = new CheckBox("???");
-        penaltyCheckBox.setSelected(UI.penaltyEnabled); // Aktuellen Wert laden
-        penaltyCheckBox.setOnAction(_ -> UI.penaltyEnabled = penaltyCheckBox.isSelected()); // Wert speichern
-
-        // Tooltip für die Strafe-Option
-        Tooltip penaltyTooltip = new Tooltip("Wenn das Wort nicht erraten wurde, passiert etwas :D");
-        penaltyTooltip.setShowDelay(Duration.millis(500));
-        penaltyCheckBox.setTooltip(penaltyTooltip);
-
-        // Button zum Zurückkehren zum Hauptmenü
-        Button btnBack = new Button("Zurück zum Hauptmenü");
-        btnBack.setOnAction(_ -> showMainMenu(stage));
-
-        // Container für alle Einstellungselemente
-        VBox settingsContent = new VBox(20);
-        settingsContent.setAlignment(Pos.CENTER);
-
-        // Hauptüberschrift für die Einstellungsseite
-        Label lableTitle = new Label("Einstellungen");
-        lableTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
-
-        // Abstandshalter für besseres Layout
-        Region spacer5 = new Region();
-        spacer5.setPrefHeight(5);
-        Region spacer10 = new Region();
-        spacer10.setPrefHeight(10);
-
-        // Alle UI-Elemente zum Settings-Container hinzufügen
-        settingsContent.getChildren().addAll(
-                settingsLabel,
-                debugModeCheckBox,
-                spacer10,
-                sliderLabel,
-                sliderBox,
-                sliderValueLabel,
-                spacer5,  // 5px Abstand
-                btnBack,
-                spacer15,
-                themeLabel,
-                themeOptions,
-                penaltyCheckBox
-        );
-
-        // Container zum Hauptfenster hinzufügen
-        rootNode.getChildren().add(settingsContent);
-
-        // Fenster zentrieren
-        stage.centerOnScreen();
+        delay.play();
     }
 
     /**
@@ -522,7 +537,7 @@ public class UI extends Application {
         themeOption.getChildren().addAll(colorPreview, nameLabel, themeRadio);
 
         // Gesamte Komponente klickbar machen
-        themeOption.setOnMouseClicked(e -> themeRadio.setSelected(true));
+        themeOption.setOnMouseClicked(_ -> themeRadio.setSelected(true));
 
         return themeOption;
     }
@@ -537,54 +552,36 @@ public class UI extends Application {
         Scene scene = stage.getScene();
 
         // Bisherige Theme-Klassen entfernen
-        scene.getRoot().getStyleClass().removeAll("theme-dark", "theme-light", "theme-mint");
+        scene.getRoot().getStyleClass().removeAll("theme-dark", "theme-light", "theme-mint", "theme-random");
 
         // Ausgewähltes Theme anwenden
         switch (themeName) {
             case "dunkel" -> {
-                // Dunkles Theme: Dunkler Hintergrund mit hellem Text
+                // Dunkles Theme: CSS-Klasse anwenden
                 scene.getRoot().getStyleClass().add("theme-dark");
-                scene.getRoot().setStyle("-fx-background-color: #1e1e1e;");
-
-                // Label-Stile aktualisieren, außer in der Spielfeldmatrix
-                applyLabelStyles(scene.getRoot(), "-fx-text-fill: #e6e6e6;");
-
-                // Aktuelles Theme in den Variablen speichern
                 Variables.currentTheme = "dark";
             }
             case "hell" -> {
-                // Helles Theme: Heller Hintergrund mit dunklem Text
+                // Helles Theme: CSS-Klasse anwenden
                 scene.getRoot().getStyleClass().add("theme-light");
-                scene.getRoot().setStyle("-fx-background-color: #f0f0f0;");
-
-                // Label-Stile aktualisieren
-                applyLabelStyles(scene.getRoot(), "-fx-text-fill: #1e1e1e;");
-
                 Variables.currentTheme = "light";
             }
             case "mint" -> {
-                // Mint Theme: Mintgrüner Hintergrund mit dunklem Text
+                // Mint Theme: CSS-Klasse anwenden
                 scene.getRoot().getStyleClass().add("theme-mint");
-                scene.getRoot().setStyle("-fx-background-color: #c8ffdc;");
-
-                // Label-Stile aktualisieren
-                applyLabelStyles(scene.getRoot(), "-fx-text-fill: #1e1e1e;");
-
                 Variables.currentTheme = "mint";
             }
             case "zufall" -> {
-                // Zufallstheme: Zufällige Hintergrund- und Textfarbe
+                // Zufallstheme: Zufällige Hintergrund- und Textfarbe (inline CSS beibehalten)
                 Color bgColor = Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
                 Color textColor = Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
 
-                // Hintergrundfarbe anwenden
                 String bgHex = String.format("#%02X%02X%02X",
                         (int)(bgColor.getRed()*255),
                         (int)(bgColor.getGreen()*255),
                         (int)(bgColor.getBlue()*255));
                 scene.getRoot().setStyle("-fx-background-color: " + bgHex + ";");
 
-                // Textfarbe anwenden
                 String textHex = String.format("#%02X%02X%02X",
                         (int)(textColor.getRed()*255),
                         (int)(textColor.getGreen()*255),
@@ -596,23 +593,17 @@ public class UI extends Application {
         }
     }
 
-    /**
-     * Wendet Stile auf alle Label-Elemente an, außer solche in der Spielfeldmatrix
-     *
-     * @param parent Das übergeordnete Element, dessen Kinder durchsucht werden
-     * @param style  Der anzuwendende CSS-Stil
-     */
-    private void applyLabelStyles(javafx.scene.Parent parent, String style) {
-        // Alle Kinder durchgehen
-        for (javafx.scene.Node node : parent.getChildrenUnmodifiable()) {
-            // Wenn es sich um ein Label handelt und nicht Teil der Spielfeldmatrix ist
-            if (node instanceof Label && !(node.getParent() instanceof GridPane)) {
-                node.setStyle(style);
-            }
+    private void applyLabelStyles(javafx.scene.Node node, String style) {
+        // Wenn es ein Label ist, Style anwenden
+        if (node instanceof Label label) {
+            String currentStyle = label.getStyle();
+            label.setStyle(currentStyle + " " + style);
+        }
 
-            // Rekursiv Kinder durchsuchen, wenn es sich um einen Container handelt
-            if (node instanceof javafx.scene.Parent) {
-                applyLabelStyles((javafx.scene.Parent) node, style);
+        // Rekursiv für alle Kinder anwenden, wenn es ein Parent ist
+        if (node instanceof Parent parent) {
+            for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                applyLabelStyles(child, style);
             }
         }
     }
@@ -958,8 +949,7 @@ public class UI extends Application {
             }
 
             // Prüfen, ob das Wort in der Wortliste enthalten ist
-            Wortliste wortliste = new Wortliste();
-            if (!wortliste.isInWordList(input)) {
+            if (!Wortliste.isInWordList(input)) {
                 // Eingabe ist kein gültiges Wort - Reihe zurücksetzen
                 currentRow--;
                 currentCol = 5;
@@ -1009,6 +999,16 @@ public class UI extends Application {
                     sequence.setOnFinished(_ -> {
                         // Tastatur-Farben aktualisieren
                         updateKeyboard(normalizedInput, colors);
+
+                        // Im Challenge-Modus falsche Buchstaben zur incorrectLetters-Collection hinzufügen
+                        if (withTimer) {
+                            for (int i = 0; i < normalizedInput.length(); i++) {
+                                // Wenn die Farbe grau ist (#787c7e), ist der Buchstabe nicht im Zielwort enthalten
+                                if (colors[i].equals(Color.web("#787c7e"))) {
+                                    incorrectLetters.add(normalizedInput.charAt(i));
+                                }
+                            }
+                        }
 
                         // Prüfen, ob gewonnen oder verloren
                         if (allCorrect) {
@@ -1200,18 +1200,6 @@ public class UI extends Application {
         private void showLostDialog(String message) {
             if (timer != null) {
                 timer.stop();
-            }
-
-            // Strafe ausführen, wenn das Wort nicht erraten wurde
-            if (penaltyEnabled) {
-                try {
-                    // Windows-PC sperren mit rundll32
-                    Runtime.getRuntime().exec("rundll32.exe user32.dll,LockWorkStation");
-                    // Kurze Pause, damit der Sperrbildschirm vor dem AlertDialog erscheint
-                    Thread.sleep(500);
-                } catch (Exception e) {
-                    System.err.println("Fehler beim Ausführen der Strafe: " + e.getMessage());
-                }
             }
 
             Alert alert = getAlert("Verloren!", message);
