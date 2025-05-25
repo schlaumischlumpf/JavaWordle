@@ -287,15 +287,8 @@ public class UI extends Application {
         String targetWord = preloadedTargetWord;
         final GameFieldWithCheck[] gameField = new GameFieldWithCheck[1];
 
-        // Debug-Fenster muss auf dem JavaFX-Thread erstellt werden
-        // Wenn kein Debug-Modus, kann direkt erstellt werden
+        // CountDownLatch zur Thread-Synchronisation
         if (Variables.debugMode) {
-            Platform.runLater(() -> {
-                // Je nach Spielmodus unterschiedliche GameField-Einstellungen
-                switchPreloadedGameType(stage, targetWord, gameField);
-            });
-
-            // CountDownLatch zur Thread-Synchronisation
             CountDownLatch latch = new CountDownLatch(1);
 
             Platform.runLater(() -> {
@@ -945,83 +938,89 @@ public class UI extends Application {
         // Methode zur Evaluierung der Eingabe des Nutzers
         private void checkInput(String input) {
             if (input == null || input.length() != 5) {
-                return; // Eingabe ignorieren, wenn nicht genau 5 Buchstaben
-            }
-
-            // Prüfen, ob das Wort in der Wortliste enthalten ist
-            if (!Wortliste.isInWordList(input)) {
-                // Eingabe ist kein gültiges Wort - Reihe zurücksetzen
-                currentRow--;
-                currentCol = 5;
-
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Ungültiges Wort");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Das Wort \"" + input + "\" ist nicht in der Wortliste enthalten.");
-                    Stage alertStage = (Stage) alert.getDialogPane().getScene().getWindow();
-                    setStageIcon(alertStage);
-                    alert.showAndWait();
-
-                    highlightCurrentCell(); // Aktualisiere das aktuelle Feld
-                });
                 return;
             }
 
-
-            // Aktuellen Zeilenindex speichern, bevor er inkrementiert wird
-            final int rowToCheck = currentRow - 1;  // Die zu prüfende Zeile ist die vorherige
-
-            // Eingabe normalisieren (Großbuchstaben)
             String normalizedInput = input.toUpperCase();
+            
+            // Überprüfung mit Wortliste statt HybridWortliste
+            // Da Wortliste vermutlich keine asynchrone Methode hat, führen wir die Prüfung in einem separaten Thread durch
+            Thread validationThread = new Thread(() -> {
+                boolean isValid = Wortliste.isInWordList(normalizedInput);
+                Platform.runLater(() -> {
+                    if (!isValid) {
+                        // Eingabe ist kein gültiges Wort - Reihe zurücksetzen
+                        currentRow--;
+                        currentCol = 5;
 
-            // Logik in Platform.runLater auslagern, um UI-Thread nicht zu blockieren
-            Platform.runLater(() -> {
-                // Wort überprüfen und Farben bestimmen
-                Color[] colors = CheckAlgo.pruefeWort(normalizedInput, targetWord);
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Ungültiges Wort");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Das Wort \"" + normalizedInput + "\" ist nicht gültig.");
+                        Stage alertStage = (Stage) alert.getDialogPane().getScene().getWindow();
+                        setStageIcon(alertStage);
+                        alert.showAndWait();
 
-                // Prüfen, ob alle Farben grün sind (Wort erraten)
-                boolean allCorrect = Arrays.stream(colors).allMatch(color -> color.equals(Color.web("#6aaa64")));
-
-                // Animation für das schrittweise Aufdecken der Ergebnisse
-                PauseTransition initialPause = new PauseTransition(Duration.millis(200));
-                initialPause.setOnFinished(_ -> {
-                    // Sequenz von Animationen erstellen, die nacheinander abgespielt werden
-                    SequentialTransition sequence = new SequentialTransition();
-
-                    for (int col = 0; col < 5; col++) {
-                        // Animation für jeden Buchstaben erstellen
-                        SequentialTransition cellAnimation = createCellAnimation(rowToCheck, col, colors[col]);
-                        sequence.getChildren().add(cellAnimation);
+                        highlightCurrentCell();
+                        return;
                     }
+                    
+                    // Rest der checkInput Logik...
+                    processValidInput(normalizedInput);
+                });
+            });
+            validationThread.setDaemon(true);
+            validationThread.start();
+        }
 
-                    // Nach Abschluss aller Animationen Spielstatus prüfen
-                    sequence.setOnFinished(_ -> {
-                        // Tastatur-Farben aktualisieren
-                        updateKeyboard(normalizedInput, colors);
+        private void processValidInput(String normalizedInput) {
+            // Hier kommt der Rest deiner ursprünglichen checkInput Logik
+            final int rowToCheck = currentRow - 1;
+            
+            // Wort überprüfen und Farben bestimmen
+            Color[] colors = CheckAlgo.pruefeWort(normalizedInput, targetWord);
+            
+            // Prüfen, ob alle Farben grün sind (Wort erraten)
+            boolean allCorrect = Arrays.stream(colors).allMatch(color -> color.equals(Color.web("#6aaa64")));
 
-                        // Im Challenge-Modus falsche Buchstaben zur incorrectLetters-Collection hinzufügen
-                        if (withTimer) {
-                            for (int i = 0; i < normalizedInput.length(); i++) {
-                                // Wenn die Farbe grau ist (#787c7e), ist der Buchstabe nicht im Zielwort enthalten
-                                if (colors[i].equals(Color.web("#787c7e"))) {
-                                    incorrectLetters.add(normalizedInput.charAt(i));
-                                }
+            // Animation für das schrittweise Aufdecken der Ergebnisse
+            PauseTransition initialPause = new PauseTransition(Duration.millis(200));
+            initialPause.setOnFinished(_ -> {
+                // Sequenz von Animationen erstellen, die nacheinander abgespielt werden
+                SequentialTransition sequence = new SequentialTransition();
+
+                for (int col = 0; col < 5; col++) {
+                    // Animation für jeden Buchstaben erstellen
+                    SequentialTransition cellAnimation = createCellAnimation(rowToCheck, col, colors[col]);
+                    sequence.getChildren().add(cellAnimation);
+                }
+
+                // Nach Abschluss aller Animationen Spielstatus prüfen
+                sequence.setOnFinished(_ -> {
+                    // Tastatur-Farben aktualisieren
+                    updateKeyboard(normalizedInput, colors);
+
+                    // Im Challenge-Modus falsche Buchstaben zur incorrectLetters-Collection hinzufügen
+                    if (withTimer) {
+                        for (int i = 0; i < normalizedInput.length(); i++) {
+                            // Wenn die Farbe grau ist (#787c7e), ist der Buchstabe nicht im Zielwort enthalten
+                            if (colors[i].equals(Color.web("#787c7e"))) {
+                                incorrectLetters.add(normalizedInput.charAt(i));
                             }
                         }
+                    }
 
-                        // Prüfen, ob gewonnen oder verloren
-                        if (allCorrect) {
-                            showWonDialog(targetWord, rowToCheck + 1);
-                        } else if (rowToCheck + 1 >= rows) {
-                            showLostDialog("Leider verloren! Das Wort war: " + targetWord);
-                        }
-                    });
-
-                    sequence.play();
+                    // Prüfen, ob gewonnen oder verloren
+                    if (allCorrect) {
+                        showWonDialog(targetWord, rowToCheck + 1);
+                    } else if (rowToCheck + 1 >= rows) {
+                        showLostDialog("Leider verloren! Das Wort war: " + targetWord);
+                    }
                 });
-                initialPause.play();
+
+                sequence.play();
             });
+            initialPause.play();
         }
 
         // Methode, die die komplette Animation für eine Zelle erstellt und zurückgibt
