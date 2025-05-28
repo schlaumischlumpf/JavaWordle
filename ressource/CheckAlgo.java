@@ -1,5 +1,5 @@
 // CheckAlgo.java
-// Stand: 23.04.2025
+// Stand: 28.05.2025
 // Autoren: Lennart und Moritz
 
 package ressource;
@@ -17,56 +17,56 @@ import javafx.scene.paint.Color;
 */
 
 public class CheckAlgo {
-    // Methode pruefeWort(), die das eingegebene Wort mit dem gesuchten Wort vergleicht
+    // Methode checkWord(), die das eingegebene Wort mit dem gesuchten Wort vergleicht
     // Sie gibt ein Array von Farben zurück, das den Status der Übereinstimmung anzeigt
-    public static Color[] pruefeWort(String eingabe, String zielwort) {
+    public static Color[] checkWord(String input, String targetWord) {
         // Konvertierung der Eingabe und des Zielwortes in Großbuchstaben
-        eingabe = eingabe.toUpperCase();
-        zielwort = zielwort.toUpperCase();
+        input = input.toUpperCase();
+        targetWord = targetWord.toUpperCase();
 
         // Speicherung der Länge des Zielwortes → Verwendung für Dimensionierung des Arrays
-        int laenge = zielwort.length();
+        int wordLenght = targetWord.length();
 
         // Array, das die Farben für die Übereinstimmungen speichert
-        Color[] farben = new Color[laenge];
+        Color[] colors = new Color[wordLenght];
 
         // Hilfsarray, um zu verfolgen, welche Buchstaben im Zielwort bereits verwendet wurden → Vermeidung von Mehrfachzählungen
-        boolean[] zielwortBenutzt = new boolean[laenge];
+        boolean[] usedInTargetWord = new boolean[wordLenght];
 
         // Erster Durchgang der Überprüfung: Finden von exakten Übereinstimmungen → Grün als Hintergrund markieren
-        for (int i = 0; i < laenge; i++) {
-            if (i < eingabe.length() && eingabe.charAt(i) == zielwort.charAt(i)) {
-                farben[i] = Color.web("#6aaa64"); // Grün für richtige Position
-                zielwortBenutzt[i] = true;
+        for (int i = 0; i < wordLenght; i++) {
+            if (i < input.length() && input.charAt(i) == targetWord.charAt(i)) {
+                colors[i] = Color.web("#6aaa64"); // Grün für richtige Position
+                usedInTargetWord[i] = true;
             } else {
-                farben[i] = Color.web("#787c7e"); // Grau für falsche Buchstaben
+                colors[i] = Color.web("#787c7e"); // Grau für falsche Buchstaben
             }
         }
 
         // Zweiter Durchgang: Finden vom Buchstaben an falscher Position (gelb)
-        for (int i = 0; i < eingabe.length() && i < laenge; i++) {
-            if (farben[i].equals(Color.web("#6aaa64"))) {
+        for (int i = 0; i < input.length() && i < wordLenght; i++) {
+            if (colors[i].equals(Color.web("#6aaa64"))) {
                 continue; // Bereits als korrekt markiert
             }
 
-            char buchstabe = eingabe.charAt(i);
-            boolean gefunden = false;
+            char letters = input.charAt(i);
+            boolean lettersFound = false;
 
             // Suche nach diesem Buchstaben im Zielwort
-            for (int j = 0; j < laenge; j++) {
-                if (!zielwortBenutzt[j] && zielwort.charAt(j) == buchstabe) {
-                    farben[i] = Color.web("#c9b458"); // Gelb für richtige Buchstaben an falscher Stelle
-                    zielwortBenutzt[j] = true;
-                    gefunden = true;
+            for (int j = 0; j < wordLenght; j++) {
+                if (!usedInTargetWord[j] && targetWord.charAt(j) == letters) {
+                    colors[i] = Color.web("#c9b458"); // Gelb für richtige Buchstaben an falscher Stelle
+                    usedInTargetWord[j] = true;
+                    lettersFound = true;
                     break;
                 }
             }
 
-            if (!gefunden) {
-                farben[i] = Color.web("#787c7e"); // Grau für nicht vorkommende Buchstaben
+            if (!lettersFound) {
+                colors[i] = Color.web("#787c7e"); // Grau für nicht vorkommende Buchstaben
             }
         }
 
-        return farben;
+        return colors;
     }
 }
