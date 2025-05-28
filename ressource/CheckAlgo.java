@@ -25,7 +25,7 @@ public class CheckAlgo {
         targetWord = targetWord.toUpperCase();
 
         // Speicherung der Länge des Zielwortes → Verwendung für Dimensionierung des Arrays
-        int wordLenght = targetWord.length();
+        int wordLength = targetWord.length();
 
         // Array, das die Farben für die Übereinstimmungen speichert
         Color[] colors = new Color[wordLenght];
