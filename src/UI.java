@@ -1,5 +1,5 @@
 // UI.java
-// Stand: 14.05.2025
+// Stand: 28.05.2025
 // Autoren: Lennart und Moritz
 
 package src;
@@ -936,41 +936,18 @@ public class UI extends Application {
         }
 
         // Methode zur Evaluierung der Eingabe des Nutzers
-        private void checkInput(String input) {
+        private boolean checkInput(String input) {
             if (input == null || input.length() != 5) {
-                return;
+                return false;
             }
 
             String normalizedInput = input.toUpperCase();
-            
-            // Überprüfung mit Wortliste statt HybridWortliste
-            // Da Wortliste vermutlich keine asynchrone Methode hat, führen wir die Prüfung in einem separaten Thread durch
-            Thread validationThread = new Thread(() -> {
-                boolean isValid = Wortliste.isInWordList(normalizedInput);
-                Platform.runLater(() -> {
-                    if (!isValid) {
-                        // Eingabe ist kein gültiges Wort - Reihe zurücksetzen
-                        currentRow--;
-                        currentCol = 5;
 
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.setTitle("Ungültiges Wort");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Das Wort \"" + normalizedInput + "\" ist nicht gültig.");
-                        Stage alertStage = (Stage) alert.getDialogPane().getScene().getWindow();
-                        setStageIcon(alertStage);
-                        alert.showAndWait();
-
-                        highlightCurrentCell();
-                        return;
-                    }
-                    
-                    // Rest der checkInput Logik...
-                    processValidInput(normalizedInput);
-                });
-            });
-            validationThread.setDaemon(true);
-            validationThread.start();
+            boolean isValid = Wortliste.isInWordList(normalizedInput);
+            if (!isValid) {
+                return false;
+            }
+            return true;
         }
 
         private void processValidInput(String normalizedInput) {
@@ -978,7 +955,7 @@ public class UI extends Application {
             final int rowToCheck = currentRow - 1;
             
             // Wort überprüfen und Farben bestimmen
-            Color[] colors = CheckAlgo.pruefeWort(normalizedInput, targetWord);
+            Color[] colors = CheckAlgo.checkWord(normalizedInput, targetWord);
             
             // Prüfen, ob alle Farben grün sind (Wort erraten)
             boolean allCorrect = Arrays.stream(colors).allMatch(color -> color.equals(Color.web("#6aaa64")));
@@ -1112,12 +1089,12 @@ public class UI extends Application {
                 }
                 String input = sb.toString();
 
-                // Zeile inkrementieren und Spalte zurücksetzen
-                currentRow++;
-                currentCol = 0;
 
-                // Überprüfung der Eingabe starten
-                checkInput(input);
+                // Zeile inkrementieren und Spalte zurücksetzen
+                if (checkInput(input)) {
+                    currentRow++;
+                    currentCol = 0;
+                }
 
                 // Nächstes Feld hervorheben
                 highlightCurrentCell();
