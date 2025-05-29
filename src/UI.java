@@ -1094,6 +1094,7 @@ public class UI extends Application {
                 if (checkInput(input)) {
                     currentRow++;
                     currentCol = 0;
+                    processValidInput(input);
                 }
 
                 // Nächstes Feld hervorheben
