@@ -28,13 +28,13 @@ public class CheckAlgo {
         int wordLength = targetWord.length();
 
         // Array, das die Farben für die Übereinstimmungen speichert
-        Color[] colors = new Color[wordLenght];
+        Color[] colors = new Color[wordLength];
 
         // Hilfsarray, um zu verfolgen, welche Buchstaben im Zielwort bereits verwendet wurden → Vermeidung von Mehrfachzählungen
-        boolean[] usedInTargetWord = new boolean[wordLenght];
+        boolean[] usedInTargetWord = new boolean[wordLength];
 
         // Erster Durchgang der Überprüfung: Finden von exakten Übereinstimmungen → Grün als Hintergrund markieren
-        for (int i = 0; i < wordLenght; i++) {
+        for (int i = 0; i < wordLength; i++) {
             if (i < input.length() && input.charAt(i) == targetWord.charAt(i)) {
                 colors[i] = Color.web("#6aaa64"); // Grün für richtige Position
                 usedInTargetWord[i] = true;
@@ -44,7 +44,7 @@ public class CheckAlgo {
         }
 
         // Zweiter Durchgang: Finden vom Buchstaben an falscher Position (gelb)
-        for (int i = 0; i < input.length() && i < wordLenght; i++) {
+        for (int i = 0; i < input.length() && i < wordLength; i++) {
             if (colors[i].equals(Color.web("#6aaa64"))) {
                 continue; // Bereits als korrekt markiert
             }
@@ -53,7 +53,7 @@ public class CheckAlgo {
             boolean lettersFound = false;
 
             // Suche nach diesem Buchstaben im Zielwort
-            for (int j = 0; j < wordLenght; j++) {
+            for (int j = 0; j < wordLength; j++) {
                 if (!usedInTargetWord[j] && targetWord.charAt(j) == letters) {
                     colors[i] = Color.web("#c9b458"); // Gelb für richtige Buchstaben an falscher Stelle
                     usedInTargetWord[j] = true;
