@@ -1,3 +1,0 @@
-sessions:4
-undos:1
-restarts:1
