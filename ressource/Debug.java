@@ -443,9 +443,7 @@ public class Debug {
         return changeWordButton;
     }
 
-    /**
-     * Aktualisiert die Debug-Informationen
-     */
+    // Aktualisierung der Debuginformationen
     public static void updateDebugInfo(String targetWord) {
         currentTargetWord = targetWord;
         if (wordLabel != null) {

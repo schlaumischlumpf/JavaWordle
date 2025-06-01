@@ -14,19 +14,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 
-/**
- * ButtonAnimations-Klasse für visuelle Effekte bei Buttons
- * Implementiert einen rotierenden Rahmen beim Hover über Buttons
- */
 public class Animation {
 
     private static int INDEFINITE;
 
-    /**
-     * Wendet den rotierenden Rahmen-Effekt auf einen einzelnen Button an
-     *
-     * @param button Der Button, auf den der Effekt angewendet werden soll
-     */
     public static void applyRotatingBorderEffect(Button button) {
         // Erstellen eines Container-StackPane mit dem eigentlichen Button und einem Rahmen
         StackPane buttonContainer = new StackPane();
@@ -89,20 +80,10 @@ public class Animation {
         }
     }
 
-    /**
-     * Wendet den rotierenden Rahmen-Effekt auf alle Buttons an
-     *
-     * @param root Das Wurzelelement des Szenegraphen
-     */
     public static void setupRotatingButtonBorders(Node root) {
         findButtonsAndApplyEffect(root);
     }
 
-    /**
-     * Rekursive Hilfsmethode zum Finden und Bearbeiten aller Buttons im Szenegraphen
-     *
-     * @param node Aktueller Knoten im Szenegraphen
-     */
     private static void findButtonsAndApplyEffect(Node node) {
         if (node instanceof Button button) {
             applyRotatingBorderEffect(button);

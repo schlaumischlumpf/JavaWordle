@@ -32,11 +32,19 @@
 }
 
 .theme-dark .label {
-    -fx-text-fill: #e6e6e6;
+    -fx-text-fill: #686868;
 }
 
 .theme-dark .button {
     -fx-background-color: #404040;
+    -fx-text-fill: #e6e6e6;
+}
+
+.theme-dark .radio-button {
+    -fx-text-fill: #e6e6e6;
+}
+
+.theme-dark .check-box {
     -fx-text-fill: #e6e6e6;
 }
 
@@ -64,8 +72,16 @@
 }
 
 .theme-mint .button {
-    -fx-background-color: #6ec78d;
+    -fx-background-color: #aee6c2;
     -fx-text-fill: #000000;
+}
+
+.theme-mint .check-box .box {
+    -fx-background-color: #aee6c2;
+}
+
+.theme-mint .radio-button .radio {
+    -fx-background-color: #aee6c2;
 }
 
 /* Grundlegende Zellen im mint-theme */
@@ -80,20 +96,6 @@
     -fx-border-width: 2;
 }
 
-/* Zellen mit korrektem Buchstaben im mint-theme */
-.mint-theme .correct-letter {
-    -fx-background-color: #69c090;
-}
-
-/* Zellen mit Buchstaben an falscher Position im mint-theme */
-.mint-theme .wrong-position {
-    -fx-background-color: #ffedad;
-}
-
-/* Zellen mit falschem Buchstaben im mint-theme */
-.mint-theme .incorrect-letter {
-    -fx-background-color: #b2d8c5;
-}
 
 .random-theme {
     /* Wird dynamisch gesetzt */
