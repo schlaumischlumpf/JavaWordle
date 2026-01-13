@@ -1,811 +1,705 @@
 // UI.java
 // Stand: 28.05.2025
 // Autoren: Lennart und Moritz
+// Konvertiert zu Swing
 
 package src;
 
-import javafx.animation.Animation;
-import javafx.animation.*;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.input.KeyCode;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.transform.Rotate;
-import javafx.stage.Stage;
-import javafx.util.Duration;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import ressource.*;
-
-
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static java.lang.Thread.sleep;
 
 // Diese Klasse ist für die Benutzeroberfläche des Spiels verantwortlich.
 // Sie enthält Methoden zum Erstellen und Verwalten der verschiedenen Anwendungsfenster,
 // einschließlich des Hauptmenüs, des Einstellungsmenüs und des Spiels.
-public class UI extends Application {
+public class UI {
     // Boolean, damit die Einstellungen nicht beim Starten der Anwendung geöffnet werden
     public static boolean openSettingsOnStart = false;
-    // Container für die vertikale Anordnung der Elemente im Hauptfenster
-    private static VBox rootNode;
+    
+    // Hauptfenster der Anwendung
+    private JFrame mainFrame;
+    
+    // Container für die Elemente im Hauptfenster
+    private JPanel contentPanel;
+    
     // Dedizierter Thread-Pool für das Vorladen von Wörtern im Hintergrund
-    private final java.util.concurrent.ExecutorService preloadService =
-            java.util.concurrent.Executors.newSingleThreadExecutor(r -> getPrepThread(new Thread(r, "VorladeThread")));
+    private final ExecutorService preloadService = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "VorladeThread");
+        t.setDaemon(true);
+        return t;
+    });
+    
     // Variablen für das Precaching (vorladen von Wörtern für bessere Performance)
     public String preloadedTargetWord;
     public int preloadedGameType = 1; // Standard: Normal-Modus
-    // Erstellung einer ToggleGroup für die Radiobuttons im Hauptmenü
-    ToggleGroup tg;
-
+    
+    // Button group für die Radiobuttons im Hauptmenü
+    ButtonGroup modeButtonGroup;
+    
     // Methode zum Setzen des Icons in der Titelleiste des Fensters
-    private static void setStageIcon(Stage stage) {
-        Image icon = new Image(Objects.requireNonNull(UI.class.getResourceAsStream("/ressource/logo.png")));
-        stage.getIcons().add(icon);
-    }
-
-    private static Slider getSlider() {
-        Slider setTimerValue = new Slider(30, 360, 210);
-        setTimerValue.setMajorTickUnit(30); // Schrittweite für große Markierungen
-        setTimerValue.setMinorTickCount(0); // Keine kleinen Markierungen
-        setTimerValue.setSnapToTicks(true); // Auf Markierungen einrasten
-        setTimerValue.setPrefWidth(350); // Breite des Sliders
-        setTimerValue.setShowTickMarks(true); // Markierungen anzeigen
-        setTimerValue.setShowTickLabels(false); // Keine Beschriftungen an den Markierungen
-        return setTimerValue;
-    }
-
-    private static PauseTransition getColorPause(Color color, Label cell) {
-        PauseTransition colorPause = new PauseTransition(Duration.millis(10));
-        colorPause.setOnFinished(_ -> {
-            // Hintergrundfarbe setzen
-            String hexColor = String.format("#%02X%02X%02X",
-                    (int) (color.getRed() * 255),
-                    (int) (color.getGreen() * 255),
-                    (int) (color.getBlue() * 255));
-            cell.setStyle("-fx-background-color: " + hexColor + "; -fx-border-color: " + hexColor + "; -fx-border-width: 1; -fx-text-fill: white;");
-        });
-        return colorPause;
-    }
-
-    // Methode, mit der man ein CSS-Stylesheet auf eine Scene anwenden kann
-    private void applyStylesheet(Scene scene) {
-        // Der Pfad zu der CSS-Datei wird hier eingebunden
-        String cssPath = Objects.requireNonNull(getClass().getResource("/ressource/style.css")).toExternalForm();
-        scene.getStylesheets().add(cssPath);
-    }
-
-    // Startmethode der JavaFX-Anwendung - wird beim Start automatisch aufgerufen
-    @Override
-    public void start(Stage stage) {
-        // Fenstertitel setzen
-        stage.setTitle("Wordle");
-
-        // Vertikaler Layout-Container mit einem Abstand von 10px zwischen Elementen
-        rootNode = new VBox(10);
-
-        // Padding für den Container; Anordnung im Center der Stage
-        rootNode.setAlignment(Pos.CENTER);
-
-        // Neue Scene mit dem Container und einer Breite von 600px und Höhe von 400px
-        Scene scene = new Scene(rootNode, 600, 400);
-
-        // CSS-Stylesheet anwenden
-        applyStylesheet(scene);
-
-        // Icon asynchron laden, um den Startvorgang zu beschleunigen
-        // Dies verhindert Blockieren des UI-Threads beim Laden des Icons
-        Platform.runLater(() -> setStageIcon(stage));
-
-        // Hinzufügen der Scene zur Stage (Fenster)
-        stage.setScene(scene);
-
-        // Prüfen, ob Einstellungsmenü direkt geöffnet werden soll; true = öffnen, false = Wordle direkt starten
-        if (openSettingsOnStart) {
-            showSettingsMenu(stage);
-        } else {
-            showMainMenu(stage);
+    private void setFrameIcon(JFrame frame) {
+        try {
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/ressource/logo.png")));
+            frame.setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.err.println("Logo konnte nicht geladen werden: " + e.getMessage());
         }
-
-        // Die Stage wird geöffnet und dem Benutzer angezeigt
-        stage.show();
-
-        // Optimiertes Vorladen der Wortliste im Hintergrund für bessere Performance
-        // Dies passiert nach dem Anzeigen des Menüs, sodass die Benutzeroberfläche schneller erscheint
+    }
+    
+    // Startmethode der Swing-Anwendung
+    public void start() {
+        // Frame erstellen
+        mainFrame = new JFrame("Wordle");
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.setSize(600, 400);
+        mainFrame.setMinimumSize(new Dimension(600, 400));
+        
+        // Content Panel erstellen
+        contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        mainFrame.setContentPane(contentPanel);
+        
+        // Icon asynchron laden
+        SwingUtilities.invokeLater(() -> setFrameIcon(mainFrame));
+        
+        // Prüfen, ob Einstellungsmenü direkt geöffnet werden soll
+        if (openSettingsOnStart) {
+            showSettingsMenu();
+        } else {
+            showMainMenu();
+        }
+        
+        // Frame zentrieren und anzeigen
+        mainFrame.setLocationRelativeTo(null);
+        mainFrame.setVisible(true);
+        
+        // Optimiertes Vorladen der Wortliste im Hintergrund
         new Thread(Wortliste::getRandomWord).start();
     }
-
+    
     // Methode zum Erstellen und Anzeigen des Hauptmenüs
-    private void showMainMenu(Stage stage) {
-        // Hauptmenü leeren (alle vorherigen Elemente entfernen)
-        rootNode.getChildren().clear();
-
+    private void showMainMenu() {
+        // Hauptmenü leeren
+        contentPanel.removeAll();
+        
         // Titel des Fensters setzen
-        stage.setTitle("Hauptmenü");
-
-        // Label für Spielmodusauswahl erstellen
-        Label auswahl = new Label("Wähle einen Spielmodus");
-
-        // Buttons für Spielstart und Einstellungsmenü erstellen
-        Button btnConfirm = new Button("Spiel mit diesem Modus starten");
-        Button openSettings = new Button("Einstellungen");
-
-        // Breite des Einstellungsbuttons auf 150px setzen für einheitliche Größe
-        openSettings.setPrefWidth(150);
-
-        // Erstellung von Radiobuttons für die drei Spielmodi
-        RadioButton rbModus1 = new RadioButton("Normal");
-        RadioButton rbModus2 = new RadioButton("Schwer");
-        RadioButton rbModus3 = new RadioButton("Challenge");
-
-        // Festlegung der Fenstergröße
-        stage.setHeight(500);
-        stage.setWidth(600);
-
-        // Minimale Fenstergröße
-        stage.setMinHeight(500);
-        stage.setMinWidth(600);
-
-        // Neue ToggleGroup für die Radiobuttons (damit nur einer ausgewählt sein kann)
-        tg = new ToggleGroup();
-
-        // Zuweisung der ToggleGroup zu den Radiobuttons
-        rbModus1.setToggleGroup(tg);
-        rbModus2.setToggleGroup(tg);
-        rbModus3.setToggleGroup(tg);
-        rbModus1.setSelected(true); // Standardmäßig ist Normal-Modus ausgewählt
-
-        // Listener für Radiobuttons, die das Zielwort vorladen
-        rbModus1.setOnAction(_ -> preloadTargetWord(1));
-        rbModus2.setOnAction(_ -> preloadTargetWord(2));
-        rbModus3.setOnAction(_ -> preloadTargetWord(3));
-
-        // Da rbModus1 standardmäßig ausgewählt ist, initial vorladen
+        mainFrame.setTitle("Hauptmenü");
+        
+        // Panel mit vertikaler Anordnung
+        JPanel menuPanel = new JPanel();
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        menuPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // Label für Spielmodusauswahl
+        JLabel auswahlLabel = new JLabel("Wähle einen Spielmodus");
+        auswahlLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        auswahlLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // Buttons für Spielstart und Einstellungsmenü
+        JButton btnConfirm = new JButton("Spiel mit diesem Modus starten");
+        btnConfirm.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        JButton openSettings = new JButton("Einstellungen");
+        openSettings.setPreferredSize(new Dimension(150, 30));
+        openSettings.setMaximumSize(new Dimension(150, 30));
+        openSettings.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // Radiobuttons für die drei Spielmodi
+        JRadioButton rbModus1 = new JRadioButton("Normal");
+        JRadioButton rbModus2 = new JRadioButton("Schwer");
+        JRadioButton rbModus3 = new JRadioButton("Challenge");
+        
+        // ButtonGroup für die Radiobuttons
+        modeButtonGroup = new ButtonGroup();
+        modeButtonGroup.add(rbModus1);
+        modeButtonGroup.add(rbModus2);
+        modeButtonGroup.add(rbModus3);
+        rbModus1.setSelected(true); // Standardmäßig Normal-Modus
+        
+        // Listener für Radiobuttons
+        rbModus1.addActionListener(e -> preloadTargetWord(1));
+        rbModus2.addActionListener(e -> preloadTargetWord(2));
+        rbModus3.addActionListener(e -> preloadTargetWord(3));
+        
+        // Initial vorladen
         preloadTargetWord(1);
-
-        // Aktion bei Klick auf den Startbutton definieren
-        btnConfirm.setOnAction(_ -> {
-            // Speicherung des ausgewählten Radiobuttons
-            RadioButton rb = (RadioButton) tg.getSelectedToggle();
-            switch (rb.getText()) {
-                case "Normal" -> prepareAndStartNewGame(stage, 1);
-                case "Schwer" -> prepareAndStartNewGame(stage, 2);
-                case "Challenge" -> prepareAndStartNewGame(stage, 3);
+        
+        // Aktion bei Klick auf Startbutton
+        btnConfirm.addActionListener(e -> {
+            if (rbModus1.isSelected()) {
+                prepareAndStartNewGame(1);
+            } else if (rbModus2.isSelected()) {
+                prepareAndStartNewGame(2);
+            } else if (rbModus3.isSelected()) {
+                prepareAndStartNewGame(3);
             }
         });
-
-        // Öffnen des Einstellungsmenüs bei Klick auf Einstellungsbutton
-        openSettings.setOnAction(_ -> showSettingsMenu(stage));
-
-        // Horizontale Anordnung der Radiobuttons in horizontalem Layoutcontainer mit 25px Abstand
-        HBox radioButtons = new HBox(25, rbModus1, rbModus2, rbModus3);
-
-        // Anordnung der Radiobuttons in Fenstermitte
-        radioButtons.setAlignment(Pos.CENTER);
-
-        // 50px Abstand über dem Einstellungsbutton für bessere Optik
-        VBox.setMargin(openSettings, new Insets(50, 0, 0, 0));
-
-        // Vertikale Abstandshalter erstellen für besseres Layout
-        Region spacer1 = new Region();
-        spacer1.setPrefHeight(5);
-        Region spacer2 = new Region();
-        spacer2.setPrefHeight(5);
-        Region spacer3 = new Region();
-        spacer3.setPrefHeight(20);
-
-        // Alle Elemente zum rootNode hinzufügen in richtiger Reihenfolge
-        rootNode.getChildren().addAll(
-                auswahl,
-                spacer1,
-                radioButtons,
-                spacer2,
-                btnConfirm,
-                spacer3,
-                openSettings
-        );
-
-        // Fenster zentrieren auf dem Bildschirm
-        stage.centerOnScreen();
+        
+        // Öffnen des Einstellungsmenüs
+        openSettings.addActionListener(e -> showSettingsMenu());
+        
+        // Panel für Radiobuttons
+        JPanel radioPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 0));
+        radioPanel.add(rbModus1);
+        radioPanel.add(rbModus2);
+        radioPanel.add(rbModus3);
+        radioPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // Elemente zum Panel hinzufügen
+        menuPanel.add(Box.createVerticalGlue());
+        menuPanel.add(auswahlLabel);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        menuPanel.add(radioPanel);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        menuPanel.add(btnConfirm);
+        menuPanel.add(Box.createRigidArea(new Dimension(0, 70)));
+        menuPanel.add(openSettings);
+        menuPanel.add(Box.createVerticalGlue());
+        
+        contentPanel.add(menuPanel);
+        
+        // Frame aktualisieren
+        mainFrame.setSize(600, 500);
+        mainFrame.setMinimumSize(new Dimension(600, 500));
+        mainFrame.setLocationRelativeTo(null);
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
-
-    // Methode zum Vorladen des Zielworts basierend auf dem ausgewählten Spieltyp
+    
+    // Methode zum Vorladen des Zielworts
     private void preloadTargetWord(int gameType) {
         preloadedGameType = gameType;
-        // Vorladen in separaten Thread auslagern, damit die UI nicht blockiert wird
-        // und das Programm schneller startet
         preloadService.submit(() -> {
             Variables.resetTargetWord();
             preloadedTargetWord = Wortliste.getRandomWord();
         });
     }
-
-    // Verbesserte Methode zum Anzeigen des Spielbildschirms mit reduzierter Startzeit
-    private void showGameScreen(Stage stage) {
-        // Grundlegende Fenstereigenschaften sofort setzen, ohne Verzögerung
-        stage.setTitle("Wordle");
-        stage.setWidth(700);
-        stage.setHeight(800);
-        stage.setMinWidth(700);
-        stage.setMinHeight(800);
-        setStageIcon(stage);
-
-        // UI vorbereiten und ein einfaches Layout anzeigen
-        rootNode.getChildren().clear();
-        VBox gameLayout = new VBox(22);
-        gameLayout.setAlignment(Pos.CENTER);
-
-        // Ladeindikator hinzufügen während das Spiel im Hintergrund initialisiert wird
-        ProgressIndicator loadingIndicator = new ProgressIndicator();
-        loadingIndicator.setPrefSize(80, 80);
-        gameLayout.getChildren().add(loadingIndicator);
-        rootNode.getChildren().add(gameLayout);
-
-        // Spielfeld in einem Hintergrund-Thread laden, um den UI-Thread nicht zu blockieren
-        Thread initThread = getInitThread(stage, gameLayout);
-        initThread.start();
-
-        // Fenster zentrieren
-        stage.centerOnScreen();
-    }
-
-    private Thread getInitThread(Stage stage, VBox gameLayout) {
-        Thread initThread = new Thread(() -> {
-            // Spielfeld im Hintergrund erstellen
-            GameFieldWithCheck gameField = getGameFieldWithCheck(stage);
-
-            // UI nach erfolgreicher Initialisierung aktualisieren
-            Platform.runLater(() -> {
-                gameLayout.getChildren().clear();
-                Button btnBackToMenu = new Button("Zurück zum Hauptmenü");
-                btnBackToMenu.setOnAction(_ -> showMainMenu(stage));
-                gameLayout.getChildren().addAll(gameField, btnBackToMenu);
-
-                // Nächstes Wort für das kommende Spiel vorladen
+    
+    // Verbesserte Methode zum Anzeigen des Spielbildschirms
+    private void showGameScreen() {
+        mainFrame.setTitle("Wordle");
+        mainFrame.setSize(700, 800);
+        mainFrame.setMinimumSize(new Dimension(700, 800));
+        
+        // Content Panel leeren
+        contentPanel.removeAll();
+        
+        // Game Layout erstellen
+        JPanel gameLayout = new JPanel();
+        gameLayout.setLayout(new BoxLayout(gameLayout, BoxLayout.Y_AXIS));
+        gameLayout.setBorder(new EmptyBorder(22, 10, 10, 10));
+        
+        // Lade-Indikator während Initialisierung
+        JLabel loadingLabel = new JLabel("Spiel wird geladen...");
+        loadingLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        gameLayout.add(Box.createVerticalGlue());
+        gameLayout.add(loadingLabel);
+        gameLayout.add(Box.createVerticalGlue());
+        
+        contentPanel.add(gameLayout);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+        
+        // Spielfeld in Hintergrund-Thread laden
+        new Thread(() -> {
+            GameFieldWithCheck gameField = getGameFieldWithCheck();
+            
+            // UI nach Initialisierung aktualisieren
+            SwingUtilities.invokeLater(() -> {
+                gameLayout.removeAll();
+                
+                JButton btnBackToMenu = new JButton("Zurück zum Hauptmenü");
+                btnBackToMenu.addActionListener(e -> showMainMenu());
+                btnBackToMenu.setAlignmentX(Component.CENTER_ALIGNMENT);
+                
+                gameField.setAlignmentX(Component.CENTER_ALIGNMENT);
+                
+                gameLayout.add(Box.createVerticalStrut(10));
+                gameLayout.add(gameField);
+                gameLayout.add(Box.createVerticalStrut(10));
+                gameLayout.add(btnBackToMenu);
+                gameLayout.add(Box.createVerticalGlue());
+                
+                gameLayout.revalidate();
+                gameLayout.repaint();
+                
+                // Fokus auf Frame setzen für Tastatureingabe
+                mainFrame.requestFocus();
+                
+                // Nächstes Wort vorladen
                 preloadNextWord();
             });
-        });
-
-        // Als Daemon markieren, damit der Thread das Programmende nicht blockiert
-        initThread.setDaemon(true);
-        return initThread;
+        }).start();
+        
+        mainFrame.setLocationRelativeTo(null);
     }
-
-    private GameFieldWithCheck getGameFieldWithCheck(Stage stage) {
+    
+    private GameFieldWithCheck getGameFieldWithCheck() {
         String targetWord = preloadedTargetWord;
-        final GameFieldWithCheck[] gameField = new GameFieldWithCheck[1];
-
-        // CountDownLatch zur Thread-Synchronisation
-        if (Variables.debugMode) {
-            CountDownLatch latch = new CountDownLatch(1);
-
-            Platform.runLater(() -> {
-                // Je nach Spielmodus unterschiedliche GameField-Einstellungen
-                switchPreloadedGameType(stage, targetWord, gameField);
-                latch.countDown(); // Signal, dass Spielfeld erstellt wurde
-            });
-
-            // Auf Fertigstellung warten mit Timeout
-            try {
-                if (!latch.await(2, TimeUnit.SECONDS)) {
-                    System.err.println("Timeout beim Warten auf Spielfelderstellung");
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        } else switchPreloadedGameType(stage, targetWord, gameField);
-
-        return gameField[0];
+        GameFieldWithCheck gameField;
+        
+        switch (preloadedGameType) {
+            case 2 -> gameField = new GameFieldWithCheck(targetWord, this, 4, false); // Schwer: 4 Zeilen
+            case 3 -> gameField = new GameFieldWithCheck(targetWord, this, 6, true);  // Challenge: mit Timer
+            default -> gameField = new GameFieldWithCheck(targetWord, this, 6, false); // Normal: 6 Zeilen
+        }
+        
+        return gameField;
     }
-
-    private void switchPreloadedGameType(Stage stage, String targetWord, GameFieldWithCheck[] gameField) {
-        gameField[0] = switch (preloadedGameType) {
-            case 2 -> new GameFieldWithCheck(targetWord, stage, this, 4, false); // Schwer: 4 Zeilen
-            case 3 -> new GameFieldWithCheck(targetWord, stage, this, 6, true);  // Challenge: mit Timer
-            default -> new GameFieldWithCheck(targetWord, stage, this, 6, false); // Normal: 6 Zeilen
-        };
-    }
-
-    // Verbesserte Methode zum Vorladen des nächsten Worts
+    
+    // Methode zum Vorladen des nächsten Worts
     private void preloadNextWord() {
-        // Vorladen im dedizierten Thread-Pool ausführen
         preloadService.submit(() -> {
             Variables.resetTargetWord();
             preloadedTargetWord = Wortliste.getRandomWord();
         });
     }
-
+    
     // Methode zum Anzeigen des Einstellungsmenüs
-    public void showSettingsMenu(Stage stage) {
-        // Hauptmenü leeren
-        rootNode.getChildren().clear();
-
-        // Ladebildschirm anzeigen
-        VBox loadingLayout = new VBox(20);
-        loadingLayout.setAlignment(Pos.CENTER);
-
-        Label loadingLabel = new Label("Einstellungen werden geladen...");
-        loadingLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-        ProgressIndicator progress = new ProgressIndicator();
-        progress.setPrefSize(50, 50);
-
-        loadingLayout.getChildren().addAll(loadingLabel, progress);
-        rootNode.getChildren().add(loadingLayout);
-
-        // Kurze Animation für besseres visuelles Feedback
-        PauseTransition delay = new PauseTransition(Duration.millis(300));
-        delay.setOnFinished(_ -> {
-            rootNode.getChildren().clear();
-            stage.setTitle("Einstellungen");
-            stage.setHeight(700);
-
-            // Überschrift für allgemeine Einstellungen
-            Label settingsLabel = new Label("Allgemeine Einstellungen");
-            settingsLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-            // Checkbox für Debug-Modus
-            CheckBox debugModeCheckBox = new CheckBox("Debug-Modus aktivieren");
+    public void showSettingsMenu() {
+        contentPanel.removeAll();
+        
+        // Ladebildschirm
+        JPanel loadingPanel = new JPanel();
+        loadingPanel.setLayout(new BoxLayout(loadingPanel, BoxLayout.Y_AXIS));
+        
+        JLabel loadingLabel = new JLabel("Einstellungen werden geladen...");
+        loadingLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        loadingLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        loadingPanel.add(Box.createVerticalGlue());
+        loadingPanel.add(loadingLabel);
+        loadingPanel.add(Box.createVerticalGlue());
+        
+        contentPanel.add(loadingPanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+        
+        // Verzögerung für visuelles Feedback
+        Timer delay = new Timer(300, e -> {
+            contentPanel.removeAll();
+            mainFrame.setTitle("Einstellungen");
+            mainFrame.setSize(600, 700);
+            
+            // Settings Panel
+            JPanel settingsPanel = new JPanel();
+            settingsPanel.setLayout(new BoxLayout(settingsPanel, BoxLayout.Y_AXIS));
+            settingsPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+            
+            // Überschrift
+            JLabel titleLabel = new JLabel("Einstellungen");
+            titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+            titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            // Allgemeine Einstellungen
+            JLabel settingsLabel = new JLabel("Allgemeine Einstellungen");
+            settingsLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            settingsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            // Debug-Modus Checkbox
+            JCheckBox debugModeCheckBox = new JCheckBox("Debug-Modus aktivieren");
             debugModeCheckBox.setSelected(Variables.debugMode);
-            debugModeCheckBox.setOnAction(_ -> Variables.debugMode = debugModeCheckBox.isSelected());
-
-            // Tooltip für den Debug-Modus
-            Tooltip debugModeTooltip = new Tooltip("Wenn der Debug-Modus aktiviert ist, öffnet sich das Debug-Tool, was u. a. Änderungen am Wordle erlaubt.");
-            debugModeTooltip.setShowDelay(Duration.millis(500));
-            debugModeCheckBox.setTooltip(debugModeTooltip);
-
-            // Region-Abstandshalter für besseres Layout
-            Region spacer15 = new Region();
-            spacer15.setPrefHeight(20);
-
-            // Überschrift für den Theme-Bereich
-            Label themeLabel = new Label("Design-Einstellungen");
-            themeLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-            // ToggleGroup für die Theme-Buttons erstellen
-            ToggleGroup themeToggleGroup = new ToggleGroup();
-
-            // Die drei Theme-Optionen erstellen
-            VBox lightThemeOption = createThemeButton("Hell", Color.rgb(240, 240, 240), Color.rgb(30, 30, 30), themeToggleGroup);
-            VBox darkThemeOption = createThemeButton("Dunkel", Color.rgb(30, 30, 30), Color.rgb(230, 230, 230), themeToggleGroup);
-            VBox mintThemeOption = createThemeButton("Mint", Color.rgb(200, 255, 220), Color.rgb(30, 30, 30), themeToggleGroup);
-            VBox randomThemeOption = createThemeButton("Zufall",
-                    Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
-                    Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
-                    themeToggleGroup);
-            // Aktives Theme vorauswählen
-            if (Variables.currentTheme != null) {
-                switch (Variables.currentTheme) {
-                    case "dark" -> ((RadioButton) darkThemeOption.getChildren().get(2)).setSelected(true);
-                    case "mint" -> ((RadioButton) mintThemeOption.getChildren().get(2)).setSelected(true);
-                    case "random" -> ((RadioButton) randomThemeOption.getChildren().get(2)).setSelected(true);
-                    default -> ((RadioButton) lightThemeOption.getChildren().get(2)).setSelected(true);
-                }
-            } else {
-                // Standardmäßig helles Theme auswählen
-                ((RadioButton) lightThemeOption.getChildren().get(1)).setSelected(true);
-            }
-
-            // Container für die Theme-Buttons erstellen
-            HBox themeOptions = new HBox(20);
-            themeOptions.setAlignment(Pos.CENTER);
-            themeOptions.getChildren().addAll(lightThemeOption, darkThemeOption, mintThemeOption, randomThemeOption);
-
-            // Event-Handler für Theme-Änderungen hinzufügen
-            themeToggleGroup.selectedToggleProperty().addListener((_, _, newValue) -> {
-                if (newValue != null) {
-                    applyTheme(stage, ((RadioButton) newValue).getUserData().toString());
-                }
+            debugModeCheckBox.addActionListener(event -> Variables.debugMode = debugModeCheckBox.isSelected());
+            debugModeCheckBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+            debugModeCheckBox.setToolTipText("Wenn der Debug-Modus aktiviert ist, öffnet sich das Debug-Tool");
+            
+            // Timer-Einstellungen
+            JLabel sliderLabel = new JLabel("Timer-Einstellung für den Challenge-Modus");
+            sliderLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            sliderLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            // Slider
+            JSlider setTimerValue = new JSlider(30, 360, Variables.timerSeconds);
+            setTimerValue.setMajorTickSpacing(30);
+            setTimerValue.setMinorTickSpacing(0);
+            setTimerValue.setSnapToTicks(true);
+            setTimerValue.setPaintTicks(true);
+            setTimerValue.setPreferredSize(new Dimension(350, 50));
+            setTimerValue.setMaximumSize(new Dimension(400, 50));
+            
+            // Slider mit Labels
+            JPanel sliderPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+            sliderPanel.add(new JLabel("30s"));
+            sliderPanel.add(setTimerValue);
+            sliderPanel.add(new JLabel("360s"));
+            sliderPanel.setMaximumSize(new Dimension(500, 60));
+            
+            // Slider Value Label
+            JLabel sliderValueLabel = new JLabel("Eingestellte Timerzeit: " + Variables.timerSeconds + " Sekunden");
+            sliderValueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            setTimerValue.addChangeListener(evt -> {
+                int value = setTimerValue.getValue();
+                sliderValueLabel.setText("Eingestellte Timerzeit: " + value + " Sekunden");
+                Variables.timerSeconds = value;
             });
-
-            // Label über dem Slider für Timer-Einstellungen
-            Label sliderLabel = new Label("Timer-Einstellung für den Challenge-Modus");
-            sliderLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-            // Slider, mit dem man die Timerzeit für Challenge-Modus einstellen kann
-            Slider setTimerValue = getSlider();
-
-            // Container für Slider mit Beschriftungen links und rechts
-            HBox sliderBox = new HBox(10);
-            sliderBox.setAlignment(Pos.CENTER);
-            Label minLabel = new Label("30s"); // Minimaler Wert
-            Label maxLabel = new Label("360s"); // Maximaler Wert
-            sliderBox.getChildren().addAll(minLabel, setTimerValue, maxLabel);
-
-            // Label für die aktuelle Slider-Position (ausgewählte Zeit)
-            Label sliderValueLabel = new Label("Eingestellte Timerzeit: 210 Sekunden");
-
-            // Event-Listener für Änderungen am Slider
-            setTimerValue.valueProperty().addListener((_, _, newValue) -> {
-                int timerValue = newValue.intValue();
-                sliderValueLabel.setText("Eingestellte Timerzeit: " + timerValue + " Sekunden");
-
-                // Eingestellte Zeit in den globalen Variablen speichern
-                Variables.timerSeconds = timerValue;
-            });
-
-            // Button zum Zurückkehren zum Hauptmenü
-            Button btnBack = new Button("Zurück zum Hauptmenü");
-            btnBack.setOnAction(_ -> showMainMenu(stage));
-
-            // Container für alle Einstellungselemente
-            VBox settingsContent = new VBox(20);
-            settingsContent.setAlignment(Pos.CENTER);
-
-            // Hauptüberschrift für die Einstellungsseite
-            Label lableTitle = new Label("Einstellungen");
-            lableTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
-
-            // Abstandshalter für besseres Layout
-            Region spacer5 = new Region();
-            spacer5.setPrefHeight(5);
-            Region spacer10 = new Region();
-            spacer10.setPrefHeight(10);
-
-            // Alle UI-Elemente zum Settings-Container hinzufügen
-            settingsContent.getChildren().addAll(
-                    settingsLabel,
-                    debugModeCheckBox,
-                    spacer10,
-                    sliderLabel,
-                    sliderBox,
-                    sliderValueLabel,
-                    spacer5,  // 5px Abstand
-                    themeLabel,
-                    themeOptions,
-                    spacer15,
-                    btnBack
-            );
-
-            // Container zum Hauptfenster hinzufügen
-            rootNode.getChildren().add(settingsContent);
-
-            // Fenster zentrieren
-            stage.centerOnScreen();
+            
+            // Theme-Einstellungen
+            JLabel themeLabel = new JLabel("Design-Einstellungen");
+            themeLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            themeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            // Theme-Optionen
+            JPanel themePanel = createThemeSelectionPanel();
+            themePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            // Zurück-Button
+            JButton btnBack = new JButton("Zurück zum Hauptmenü");
+            btnBack.addActionListener(event -> showMainMenu());
+            btnBack.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            // Alles zum Settings Panel hinzufügen
+            settingsPanel.add(titleLabel);
+            settingsPanel.add(Box.createVerticalStrut(20));
+            settingsPanel.add(settingsLabel);
+            settingsPanel.add(Box.createVerticalStrut(10));
+            settingsPanel.add(debugModeCheckBox);
+            settingsPanel.add(Box.createVerticalStrut(20));
+            settingsPanel.add(sliderLabel);
+            settingsPanel.add(Box.createVerticalStrut(10));
+            settingsPanel.add(sliderPanel);
+            settingsPanel.add(sliderValueLabel);
+            settingsPanel.add(Box.createVerticalStrut(20));
+            settingsPanel.add(themeLabel);
+            settingsPanel.add(Box.createVerticalStrut(10));
+            settingsPanel.add(themePanel);
+            settingsPanel.add(Box.createVerticalStrut(30));
+            settingsPanel.add(btnBack);
+            
+            contentPanel.add(settingsPanel);
+            mainFrame.setLocationRelativeTo(null);
+            contentPanel.revalidate();
+            contentPanel.repaint();
         });
-        delay.play();
+        delay.setRepeats(false);
+        delay.start();
     }
-
-    /**
-     * Erstellt einen Theme-Button mit Vorschau der Farben, die durch eine Diagonale getrennt sind
-     *
-     * @param themeName Name des Themes (wird als Label angezeigt)
-     * @param bgColor   Hintergrundfarbe des Themes
-     * @param textColor Textfarbe des Themes
-     * @param group     ToggleGroup für die Radiobuttons
-     * @return VBox mit dem kompletten Theme-Button
-     */
-    private VBox createThemeButton(String themeName, Color bgColor, Color textColor, ToggleGroup group) {
-        // RadioButton für die Auswahl erstellen
-        RadioButton themeRadio = new RadioButton();
-        themeRadio.setToggleGroup(group);
-        themeRadio.setUserData(themeName.toLowerCase());
-
-        // Pane für die Farbvorschau mit diagonaler Trennung erstellen
-        Pane colorPreview = new Pane();
-        colorPreview.setPrefSize(60, 60);
-        colorPreview.setMinSize(60, 60);
-        colorPreview.setMaxSize(60, 60);
-
-        // Oberes Dreieck (Hintergrundfarbe)
-        javafx.scene.shape.Polygon topHalf = new javafx.scene.shape.Polygon(
-                0, 0,  // oben links
-                60, 0, // oben rechts
-                60, 60 // unten rechts
-        );
-        topHalf.setFill(bgColor);
-
-        // Unteres Dreieck (Textfarbe)
-        javafx.scene.shape.Polygon bottomHalf = new javafx.scene.shape.Polygon(
-                0, 0,   // oben links
-                0, 60,  // unten links
-                60, 60  // unten rechts
-        );
-        bottomHalf.setFill(textColor);
-
-        // Polygone zur Pane hinzufügen
-        colorPreview.getChildren().addAll(topHalf, bottomHalf);
-
-        // Rahmen hinzufügen
-        colorPreview.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
-
-        // Label für den Theme-Namen
-        Label nameLabel = new Label(themeName);
-
-        // Container für Vorschau, Name und RadioButton erstellen
-        VBox themeOption = new VBox(5);
-        themeOption.setAlignment(Pos.CENTER);
-        themeOption.getChildren().addAll(colorPreview, nameLabel, themeRadio);
-
-        // Gesamte Komponente klickbar machen
-        themeOption.setOnMouseClicked(_ -> themeRadio.setSelected(true));
-
-        return themeOption;
+    
+    // Methode zum Erstellen der Theme-Auswahl
+    private JPanel createThemeSelectionPanel() {
+        JPanel themePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        
+        ButtonGroup themeGroup = new ButtonGroup();
+        
+        // Theme-Optionen erstellen
+        JPanel lightTheme = createThemeButton("Hell", new Color(240, 240, 240), new Color(30, 30, 30), themeGroup);
+        JPanel darkTheme = createThemeButton("Dunkel", new Color(30, 30, 30), new Color(230, 230, 230), themeGroup);
+        JPanel mintTheme = createThemeButton("Mint", new Color(200, 255, 220), new Color(30, 30, 30), themeGroup);
+        JPanel randomTheme = createThemeButton("Zufall",
+                new Color(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
+                new Color(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256)),
+                themeGroup);
+        
+        themePanel.add(lightTheme);
+        themePanel.add(darkTheme);
+        themePanel.add(mintTheme);
+        themePanel.add(randomTheme);
+        
+        return themePanel;
     }
-
-    /**
-     * Wendet das ausgewählte Theme auf die Anwendung an
-     *
-     * @param stage     Die aktuelle Stage
-     * @param themeName Name des zu aktivierenden Themes
-     */
-    private void applyTheme(Stage stage, String themeName) {
-        Scene scene = stage.getScene();
-
-        // Bisherige Theme-Klassen entfernen
-        scene.getRoot().getStyleClass().removeAll("theme-dark", "theme-light", "theme-mint", "theme-random");
-
-        // Ausgewähltes Theme anwenden
+    
+    // Methode zum Erstellen eines Theme-Buttons
+    private JPanel createThemeButton(String themeName, Color bgColor, Color textColor, ButtonGroup group) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        
+        // Farbvorschau erstellen
+        JPanel colorPreview = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // Oberes Dreieck (Hintergrundfarbe)
+                int[] xPoints1 = {0, 60, 60};
+                int[] yPoints1 = {0, 0, 60};
+                g.setColor(bgColor);
+                g.fillPolygon(xPoints1, yPoints1, 3);
+                
+                // Unteres Dreieck (Textfarbe)
+                int[] xPoints2 = {0, 0, 60};
+                int[] yPoints2 = {0, 60, 60};
+                g.setColor(textColor);
+                g.fillPolygon(xPoints2, yPoints2, 3);
+                
+                // Rahmen
+                g.setColor(Color.BLACK);
+                g.drawRect(0, 0, 59, 59);
+            }
+        };
+        colorPreview.setPreferredSize(new Dimension(60, 60));
+        colorPreview.setMinimumSize(new Dimension(60, 60));
+        colorPreview.setMaximumSize(new Dimension(60, 60));
+        
+        // Name Label
+        JLabel nameLabel = new JLabel(themeName);
+        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // RadioButton
+        JRadioButton radioButton = new JRadioButton();
+        radioButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        group.add(radioButton);
+        
+        // Aktion für Theme-Anwendung
+        radioButton.addActionListener(e -> applyTheme(themeName));
+        
+        // Aktuelles Theme vorauswählen
+        if (Variables.currentTheme != null) {
+            if ((themeName.equals("Dunkel") && Variables.currentTheme.equals("dark")) ||
+                (themeName.equals("Hell") && Variables.currentTheme.equals("light")) ||
+                (themeName.equals("Mint") && Variables.currentTheme.equals("mint")) ||
+                (themeName.equals("Zufall") && Variables.currentTheme.equals("random"))) {
+                radioButton.setSelected(true);
+            }
+        } else if (themeName.equals("Hell")) {
+            radioButton.setSelected(true);
+        }
+        
+        // Panel zusammenbauen
+        panel.add(colorPreview);
+        panel.add(nameLabel);
+        panel.add(radioButton);
+        
+        // Klickbar machen
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                radioButton.setSelected(true);
+                applyTheme(themeName);
+            }
+        });
+        
+        return panel;
+    }
+    
+    // Methode zum Anwenden eines Themes
+    private void applyTheme(String themeName) {
         switch (themeName) {
-            case "dunkel" -> {
-                // Dunkles Theme: CSS-Klasse anwenden
-                scene.getRoot().getStyleClass().add("theme-dark");
+            case "Dunkel" -> {
+                contentPanel.setBackground(new Color(30, 30, 30));
+                setComponentColors(contentPanel, new Color(30, 30, 30), new Color(230, 230, 230));
                 Variables.currentTheme = "dark";
             }
-            case "hell" -> {
-                // Helles Theme: CSS-Klasse anwenden
-                scene.getRoot().getStyleClass().add("theme-light");
+            case "Hell" -> {
+                contentPanel.setBackground(new Color(240, 240, 240));
+                setComponentColors(contentPanel, new Color(240, 240, 240), new Color(30, 30, 30));
                 Variables.currentTheme = "light";
             }
-            case "mint" -> {
-                // Mint Theme: CSS-Klasse anwenden
-                scene.getRoot().getStyleClass().add("theme-mint");
+            case "Mint" -> {
+                contentPanel.setBackground(new Color(200, 255, 220));
+                setComponentColors(contentPanel, new Color(200, 255, 220), new Color(30, 30, 30));
                 Variables.currentTheme = "mint";
             }
-            case "zufall" -> {
-                // Zufallstheme: Zufällige Hintergrund- und Textfarbe (inline CSS beibehalten)
-                Color bgColor = Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
-                Color textColor = Color.rgb(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
-
-                String bgHex = String.format("#%02X%02X%02X",
-                        (int)(bgColor.getRed()*255),
-                        (int)(bgColor.getGreen()*255),
-                        (int)(bgColor.getBlue()*255));
-                scene.getRoot().setStyle("-fx-background-color: " + bgHex + ";");
-
-                String textHex = String.format("#%02X%02X%02X",
-                        (int)(textColor.getRed()*255),
-                        (int)(textColor.getGreen()*255),
-                        (int)(textColor.getBlue()*255));
-                applyLabelStyles(scene.getRoot(), "-fx-text-fill: " + textHex + ";");
-
+            case "Zufall" -> {
+                Color bgColor = new Color(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
+                Color textColor = new Color(Variables.random.nextInt(256), Variables.random.nextInt(256), Variables.random.nextInt(256));
+                contentPanel.setBackground(bgColor);
+                setComponentColors(contentPanel, bgColor, textColor);
                 Variables.currentTheme = "random";
             }
         }
+        contentPanel.repaint();
     }
-
-    private void applyLabelStyles(javafx.scene.Node node, String style) {
-        // Wenn es ein Label ist, Style anwenden
-        if (node instanceof Label label) {
-            String currentStyle = label.getStyle();
-            label.setStyle(currentStyle + " " + style);
-        }
-
-        // Rekursiv für alle Kinder anwenden, wenn es ein Parent ist
-        if (node instanceof Parent parent) {
-            for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
-                applyLabelStyles(child, style);
+    
+    // Hilfsmethode zum rekursiven Setzen von Farben
+    private void setComponentColors(Container container, Color bgColor, Color fgColor) {
+        for (Component comp : container.getComponents()) {
+            if (comp instanceof JLabel label) {
+                label.setForeground(fgColor);
+            } else if (comp instanceof Container) {
+                if (!(comp instanceof JButton) && !(comp instanceof JTextField) && !(comp instanceof JCheckBox) && !(comp instanceof JRadioButton)) {
+                    comp.setBackground(bgColor);
+                }
+                setComponentColors((Container) comp, bgColor, fgColor);
             }
         }
     }
-
-    // Methode zum asynchronen Vorbereiten und Starten eines neuen Spiels mit Ladebildschirm
-    private void prepareAndStartNewGame(Stage stage, int gameType) {
-        // Einfachen Ladebildschirm anzeigen, um Ladeprozess zu verdecken
-        VBox loadingLayout = new VBox(20);
-        loadingLayout.setAlignment(Pos.CENTER);
-
-        Label loadingLabel = new Label("Spiel wird vorbereitet ...");
-        loadingLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-        ProgressIndicator progress = new ProgressIndicator();
-        progress.setPrefSize(50, 50);
-
-        // Hinzufügen zur VBox
-        loadingLayout.getChildren().addAll(loadingLabel, progress);
-        rootNode.getChildren().clear();
-        rootNode.getChildren().add(loadingLayout);
-
-        // Spielvorbereitung in separatem Thread durchführen
-        Thread prepThread = getPrepThread(new Thread(() -> {
-            // Zeit für das Laden simulieren (bei Bedarf entfernen)
+    
+    // Methode zum Vorbereiten und Starten eines neuen Spiels
+    private void prepareAndStartNewGame(int gameType) {
+        contentPanel.removeAll();
+        
+        // Ladebildschirm
+        JPanel loadingPanel = new JPanel();
+        loadingPanel.setLayout(new BoxLayout(loadingPanel, BoxLayout.Y_AXIS));
+        
+        JLabel loadingLabel = new JLabel("Spiel wird vorbereitet ...");
+        loadingLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        loadingLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        loadingPanel.add(Box.createVerticalGlue());
+        loadingPanel.add(loadingLabel);
+        loadingPanel.add(Box.createVerticalGlue());
+        
+        contentPanel.add(loadingPanel);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+        
+        // Spielvorbereitung in separatem Thread
+        new Thread(() -> {
             try {
-                sleep(100);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-
-            // Spieltyp setzen und Zielwort laden
+            
             preloadedGameType = gameType;
             if (preloadedTargetWord == null) {
                 Variables.resetTargetWord();
                 preloadedTargetWord = Wortliste.getRandomWord();
             }
-
-            // UI-Thread mit dem vorbereiteten Spiel aktualisieren
-            Platform.runLater(() -> showGameScreen(stage));
-        }));
-        prepThread.start();
+            
+            SwingUtilities.invokeLater(this::showGameScreen);
+        }).start();
     }
-
-    private Thread getPrepThread(Thread preloadedGameType) {
-        preloadedGameType.setDaemon(true);
-        return preloadedGameType;
-    }
-
-    // Ressourcen beim Beenden der Anwendung freigeben
-    @Override
-    public void stop() {
-        // Thread-Pool ordnungsgemäß beenden, um Ressourcenlecks zu vermeiden
-        preloadService.shutdown();
-    }
-
-    // Eigene GameField-Klasse mit Überprüfungslogik für die Wordle-Spiellogik
-    private static class GameFieldWithCheck extends GameField {
-        private final Stage parentStage;  // Referenz auf das Hauptfenster
-        private final UI uiReference;     // Referenz auf die UI-Klasse für Callbacks
-        private final boolean withTimer; // Boolean für Timer-Modus (Challenge)
-        private final Set<Character> incorrectLetters = new HashSet<>(); // Falsche Buchstaben im Challenge-Modus
-        private final Map<Character, Button> keyboardButtons = new HashMap<>(); // Zuordnung von Buchstaben zu Tasten
-        private String targetWord; // Zielwort, das erraten werden soll
-        private Timeline timer; // Timer-Objekt für Challenge-Modus
-        private Label timerLabel; // Label für die Anzeige der verbleibenden Zeit
-        private int secondsRemaining; // Verbleibende Sekunden im Timer
-        // Zwischenspeicher für die Zellen-Matrix, um wiederholte Reflection-Aufrufe zu vermeiden
-        private Label[][] cellsCache;
-
-        // Konstruktor für das Spielfeld mit individuellen Einstellungen
-        public GameFieldWithCheck(String targetWord, Stage stage, UI uiReference, int rows, boolean withTimer) {
-            super(rows); // Konstruktor der Elternklasse mit Zeilenanzahl
-            this.targetWord = targetWord.toUpperCase(); // Zielwort in Großbuchstaben
-            this.parentStage = stage; // Speichern der Stage-Referenz
-            this.uiReference = uiReference; // Speichern der UI-Referenz für Callbacks
-            this.withTimer = withTimer; // Timer-Modus aktivieren/deaktivieren
-            // Referenz auf den Container des Hauptfensters
-
-            // Virtuelle Tastatur erstellen für die Eingabe
+    
+    // Innere Klasse GameFieldWithCheck für die Spiellogik
+    private class GameFieldWithCheck extends GameField {
+        private final UI uiReference;
+        private final boolean withTimer;
+        private final Set<Character> incorrectLetters = new HashSet<>();
+        private final Map<Character, JButton> keyboardButtons = new HashMap<>();
+        private String targetWord;
+        private Timer timer;
+        private JLabel timerLabel;
+        private int secondsRemaining;
+        private JLabel[][] cellsCache;
+        
+        public GameFieldWithCheck(String targetWord, UI uiReference, int rows, boolean withTimer) {
+            super(rows);
+            this.targetWord = targetWord.toUpperCase();
+            this.uiReference = uiReference;
+            this.withTimer = withTimer;
+            
+            // Virtuelle Tastatur erstellen
             createKeyboard();
-
-            // Tastatureingabe über physische Tastatur ermöglichen
-            parentStage.getScene().setOnKeyPressed(event -> {
-                // Spiel muss aktiv sein
-                if (timer == null || timer.getStatus() == Animation.Status.RUNNING) {
-                    KeyCode code = event.getCode();
-
-                    // Verschiedene Tasten handhaben
-                    if (code == KeyCode.ENTER) {
-                        if (currentCol == 5) {
-                            event.consume(); // Event konsumieren, um Doppelauslösung zu vermeiden
-                            submitCurrentInput();
-                        }
-                    } else if (code == KeyCode.BACK_SPACE || code == KeyCode.DELETE) {
-                        event.consume();
-                        removeLetter();
-                    } else {
-                        // Buchstabentasten verarbeiten
-                        String key = event.getText().toUpperCase();
-                        if (key.length() == 1 && Character.isLetter(key.charAt(0))) {
-                            event.consume();
-                            addLetter(key);
+            
+            // Tastatureingabe über physische Tastatur
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+                @Override
+                public boolean dispatchKeyEvent(KeyEvent e) {
+                    if (e.getID() == KeyEvent.KEY_PRESSED) {
+                        if (timer == null || timer.isRunning()) {
+                            int code = e.getKeyCode();
+                            
+                            if (code == KeyEvent.VK_ENTER) {
+                                if (currentCol == 5) {
+                                    e.consume();
+                                    submitCurrentInput();
+                                    return true;
+                                }
+                            } else if (code == KeyEvent.VK_BACK_SPACE || code == KeyEvent.VK_DELETE) {
+                                e.consume();
+                                removeLetter();
+                                return true;
+                            } else {
+                                char keyChar = e.getKeyChar();
+                                if (Character.isLetter(keyChar)) {
+                                    e.consume();
+                                    addLetter(String.valueOf(keyChar).toUpperCase());
+                                    return true;
+                                }
+                            }
                         }
                     }
+                    return false;
                 }
             });
-
-            // Key-Release Events NICHT abfangen
-            parentStage.getScene().setOnKeyReleased(null);
-
-            // Sicherstellen, dass die Scene den Fokus hat
-            Platform.runLater(() -> parentStage.getScene().getRoot().requestFocus());
-
-            // Timer hinzufügen, falls Challenge-Modus (Modus 3) aktiv ist
+            
+            // Timer für Challenge-Modus
             if (withTimer) {
                 setupTimer();
             }
-
-            // Fenster nur bei aktiviertem Debug-Modus zeigen
+            
+            // Debug-Fenster anzeigen
             if (Variables.debugMode) {
                 Debug.showDebugWindow(targetWord,
-                        // Callback zum Ändern des Zielworts im Debug-Modus
                         newWord -> this.targetWord = newWord,
-                        // Callback zum Neustarten des Spiels
-                        () -> uiReference.showGameScreen(parentStage),
-                        // Callback zum Löschen der letzten Eingabe (z.B. bei Debugging)
+                        () -> uiReference.showGameScreen(),
                         () -> {
                             if (currentRow > 0) {
                                 currentRow--;
                                 currentCol = 0;
-                                // Zellen der aktuellen Zeile zurücksetzen
                                 for (int col = 0; col < 5; col++) {
                                     setLetter(currentRow, col, "");
                                     setCellColor(currentRow, col, Color.WHITE);
                                 }
-                                highlightCurrentCell(); // Aktuelles Eingabefeld hervorheben
+                                highlightCurrentCell();
                             }
                         }
                 );
             }
         }
-
-        // Methode zum Hervorheben des aktuellen Eingabefelds
+        
         private void highlightCurrentCell() {
-            // Standard-Zellenstil definieren
-            String defaultCellStyle = "-fx-background-color: white; -fx-border-color: #d3d6da; -fx-border-width: 2;";
-            String highlightedCellStyle = "-fx-background-color: white; -fx-border-color: #999b9e; -fx-border-width: 2;";
-
-            // Zurücksetzen aller Zellen-Stile in der aktuellen Zeile auf den Standard
+            Color defaultBorder = new Color(211, 214, 218);
+            Color highlightBorder = new Color(153, 155, 158);
+            
             for (int col = 0; col < 5; col++) {
-                Label cell = getCellAt(currentRow, col);
+                JLabel cell = getCellAt(currentRow, col);
                 if (cell != null) {
-                    // Nur zurücksetzen, wenn die Zelle nicht bereits durch checkInput gefärbt wurde
-                    String currentStyle = cell.getStyle();
-                    if (!currentStyle.contains("-fx-background-color: #787c7e") &&
-                            !currentStyle.contains("-fx-background-color: #c9b458") &&
-                            !currentStyle.contains("-fx-background-color: #6aaa64")) {
-
-                        // Standard-Stil anwenden für alle nicht-aktiven Zellen
+                    LineBorder currentBorder = (LineBorder) cell.getBorder();
+                    Color borderColor = currentBorder.getLineColor();
+                    
+                    if (!borderColor.equals(CheckAlgo.COLOR_GRAY) &&
+                        !borderColor.equals(CheckAlgo.COLOR_YELLOW) &&
+                        !borderColor.equals(CheckAlgo.COLOR_GREEN)) {
                         if (col != currentCol) {
-                            cell.setStyle(defaultCellStyle);
+                            cell.setBorder(new LineBorder(defaultBorder, 2));
                         }
                     }
                 }
             }
-
-            // Aktuelles Kästchen hervorheben, wenn die Zeile noch nicht voll ist
+            
             if (currentCol < 5 && currentRow < rows) {
-                Label cellToHighlight = getCellAt(currentRow, currentCol);
-                if (cellToHighlight != null) {
-                    // Nur hervorheben, wenn die Zelle nicht bereits gefärbt wurde
-                    String currentStyle = cellToHighlight.getStyle();
-                    if (!currentStyle.contains("-fx-background-color: #787c7e") &&
-                            !currentStyle.contains("-fx-background-color: #c9b458") &&
-                            !currentStyle.contains("-fx-background-color: #6aaa64")) {
-                        cellToHighlight.setStyle(highlightedCellStyle);
+                JLabel cell = getCellAt(currentRow, currentCol);
+                if (cell != null) {
+                    LineBorder currentBorder = (LineBorder) cell.getBorder();
+                    Color borderColor = currentBorder.getLineColor();
+                    
+                    if (!borderColor.equals(CheckAlgo.COLOR_GRAY) &&
+                        !borderColor.equals(CheckAlgo.COLOR_YELLOW) &&
+                        !borderColor.equals(CheckAlgo.COLOR_GREEN)) {
+                        cell.setBorder(new LineBorder(highlightBorder, 2));
                     }
                 }
             }
         }
-
-        // Hilfsmethode zum Abrufen des Buchstabens an einer bestimmten Position
+        
         private String getLetterAt(int row, int col) {
             try {
-                // Direkt auf den Text der Zelle zugreifen, wenn möglich
-                Label cell = getCellAt(row, col);
+                JLabel cell = getCellAt(row, col);
                 return cell != null ? cell.getText() : "";
             } catch (Exception e) {
-                // Bei Fehler leeren String zurückgeben
                 return "";
             }
         }
-
-        // Verbesserte Methode für den Zugriff auf Zellen mit Caching
-        private Label getCellAt(int row, int col) {
-            // Zwischenspeicher initialisieren, falls noch nicht geschehen
+        
+        private JLabel getCellAt(int row, int col) {
             if (cellsCache == null) {
                 try {
-                    // Einmalige Verwendung von Reflection zum Abrufen des cells-Arrays
                     java.lang.reflect.Field cellsField = GameField.class.getDeclaredField("cells");
                     cellsField.setAccessible(true);
-                    cellsCache = (Label[][]) cellsField.get(this);
+                    cellsCache = (JLabel[][]) cellsField.get(this);
                 } catch (Exception e) {
                     System.err.println("Fehler beim Zugriff auf cells: " + e.getMessage());
                     return null;
                 }
             }
-
-            // Zwischengespeicherte Zellen-Matrix verwenden - deutlich schneller als Reflection
+            
             try {
                 return cellsCache[row][col];
             } catch (Exception e) {
@@ -813,376 +707,276 @@ public class UI extends Application {
                 return null;
             }
         }
-
-        // Optimierte Methode zur Erstellung der Tastatur mit einem gemeinsamen Event-Handler
+        
         private void createKeyboard() {
-            // Tastatur-Layout erstellen mit drei Zeilen
-            HBox keyboardRow1 = new HBox(7);  // Abstand erhöht von 5 auf 7
-            keyboardRow1.setAlignment(Pos.CENTER); // Zeile zentrieren
-
-            HBox keyboardRow2 = new HBox(7);  // Abstand erhöht von 5 auf 7
-            keyboardRow2.setAlignment(Pos.CENTER); // Zeile zentrieren
-
-            HBox keyboardRow3 = new HBox(7);  // Abstand erhöht von 5 auf 7
-            keyboardRow3.setAlignment(Pos.CENTER); // Zeile zentrieren
-
-            // Zeile 1: Q W E R T Z U I O P Ü
+            JPanel keyboardContainer = new JPanel();
+            keyboardContainer.setLayout(new BoxLayout(keyboardContainer, BoxLayout.Y_AXIS));
+            keyboardContainer.setBorder(new EmptyBorder(22, 0, 0, 0));
+            
+            // Zeile 1
+            JPanel row1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 0));
             String[] row1Keys = {"Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Ü"};
             for (String key : row1Keys) {
-                Button keyButton = createKeyButton(key);
-                keyboardRow1.getChildren().add(keyButton);
-                keyboardButtons.put(key.charAt(0), keyButton);
+                JButton btn = createKeyButton(key);
+                row1.add(btn);
+                keyboardButtons.put(key.charAt(0), btn);
             }
-
-            // Zeile 2: A S D F G H J K L Ö Ä
+            
+            // Zeile 2
+            JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 0));
             String[] row2Keys = {"A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"};
             for (String key : row2Keys) {
-                Button keyButton = createKeyButton(key);
-                keyboardRow2.getChildren().add(keyButton);
-                keyboardButtons.put(key.charAt(0), keyButton);
+                JButton btn = createKeyButton(key);
+                row2.add(btn);
+                keyboardButtons.put(key.charAt(0), btn);
             }
-
-            // Zeile 3: ENTER Y X C V B N M ß ⌫
-            Button enterButton = createKeyButton("ENTER");
-            enterButton.setPrefWidth(70); // Größerer Button für ENTER
-
-            // Buchstaben der dritten Zeile
+            
+            // Zeile 3
+            JPanel row3 = new JPanel(new FlowLayout(FlowLayout.CENTER, 7, 0));
+            JButton enterButton = createKeyButton("ENTER");
+            enterButton.setPreferredSize(new Dimension(70, 40));
+            row3.add(enterButton);
+            
             String[] row3Keys = {"Y", "X", "C", "V", "B", "N", "M"};
-            keyboardRow3.getChildren().add(enterButton);
-
-            // Buchstaben-Tasten hinzufügen
             for (String key : row3Keys) {
-                Button keyButton = createKeyButton(key);
-                keyboardRow3.getChildren().add(keyButton);
-                keyboardButtons.put(key.charAt(0), keyButton);
+                JButton btn = createKeyButton(key);
+                row3.add(btn);
+                keyboardButtons.put(key.charAt(0), btn);
             }
-
-            // Backspace-Taste zum Löschen von Buchstaben
-            Button backspaceButton = createKeyButton("⌫");
-
-            // Backspace-Taste zur Tastatur hinzufügen (dies fehlte!)
-            keyboardRow3.getChildren().add(backspaceButton);
-
-            // Tastaturzeilen in einen Container packen
-            VBox keyboardContainer = new VBox(10);
-            keyboardContainer.setAlignment(Pos.CENTER);
-            keyboardContainer.getChildren().addAll(keyboardRow1, keyboardRow2, keyboardRow3);
-
-            // Abstand über der Tastatur für bessere Optik (erhöht von 20 auf 22)
-            VBox.setMargin(keyboardContainer, new Insets(22, 0, 0, 0));
-
-            // Tastatur zum Spielfeld hinzufügen
-            this.getChildren().add(keyboardContainer);
-
-            // Optimierter Event-Handler für die virtuelle Tastatur
-            EventHandler<ActionEvent> keyboardHandler = event -> {
-                Button source = (Button) event.getSource();
+            
+            JButton backspaceButton = createKeyButton("⌫");
+            row3.add(backspaceButton);
+            
+            keyboardContainer.add(row1);
+            keyboardContainer.add(Box.createVerticalStrut(10));
+            keyboardContainer.add(row2);
+            keyboardContainer.add(Box.createVerticalStrut(10));
+            keyboardContainer.add(row3);
+            
+            // Event-Handler
+            ActionListener keyboardHandler = e -> {
+                JButton source = (JButton) e.getSource();
                 String text = source.getText();
-
+                
                 if (text.equals("ENTER")) {
-                    // Enter-Taste behandeln
                     if (currentCol == 5) {
                         submitCurrentInput();
                     }
-                    // Bei nicht vollständiger Eingabe keine Aktion ausführen
-                } else if (text.length() == 1) {
-                    // Buchstabentaste behandeln
+                } else if (text.length() == 1 && !text.equals("⌫")) {
                     if (!withTimer || !incorrectLetters.contains(text.charAt(0))) {
                         addLetter(text);
                     }
                 }
             };
-
-            // Handler auf alle Tasten anwenden - verbessert die Performance durch Wiederverwendung
-            for (Button keyButton : keyboardButtons.values()) {
-                keyButton.setOnAction(keyboardHandler);
+            
+            for (JButton btn : keyboardButtons.values()) {
+                btn.addActionListener(keyboardHandler);
             }
-            enterButton.setOnAction(keyboardHandler);
-            backspaceButton.setOnAction(_ -> removeLetter());
+            enterButton.addActionListener(keyboardHandler);
+            backspaceButton.addActionListener(e -> removeLetter());
+            
+            this.add(keyboardContainer);
         }
-
-        // Methode zum Erstellen einer Taste für die virtuelle Tastatur
-        private Button createKeyButton(String text) {
-            Button button = new Button(text);
-            button.setPrefWidth(40); // Standard-Breite für Tasten
-            button.setPrefHeight(40); // Höhe für Tasten
-            button.setStyle("-fx-background-color: #d3d6da; -fx-background-radius: 5; -fx-text-fill: black; -fx-font-weight: bold;");
+        
+        private JButton createKeyButton(String text) {
+            JButton button = new JButton(text);
+            button.setPreferredSize(new Dimension(40, 40));
+            button.setFont(new Font("Arial", Font.BOLD, 12));
+            button.setBackground(new Color(211, 214, 218));
+            button.setForeground(Color.BLACK);
+            button.setFocusPainted(false);
             return button;
         }
-
-        // Methode zum Aktualisieren der Tastaturfarben nach einer Überprüfung
+        
         private void updateKeyboard(String input, Color[] colors) {
             for (int i = 0; i < input.length(); i++) {
                 char c = input.charAt(i);
-                Button keyButton = keyboardButtons.get(c);
-                if (keyButton == null) continue; // Falls Taste nicht gefunden
-
-                // Nur aktualisieren, wenn der Button noch nicht grün ist
-                String currentStyle = keyButton.getStyle();
-                if (currentStyle.contains("-fx-background-color: #6aaa64")) continue;
-
-                // Farbe basierend auf dem Ergebnis setzen
-                if (colors[i].equals(Color.web("#6aaa64"))) {
-                    // Grün für korrekte Buchstaben an korrekter Position
-                    keyButton.setStyle("-fx-background-color: #6aaa64; -fx-background-radius: 5; -fx-text-fill: white; -fx-font-weight: bold;");
-                } else if (colors[i].equals(Color.web("#c9b458")) && !currentStyle.contains("-fx-background-color: #6aaa64")) {
-                    // Gelb für Buchstaben an falscher Position, aber nur wenn nicht bereits grün
-                    keyButton.setStyle("-fx-background-color: #c9b458; -fx-background-radius: 5; -fx-text-fill: white; -fx-font-weight: bold;");
-                } else if (colors[i].equals(Color.web("#787c7e")) && !currentStyle.contains("-fx-background-color: #6aaa64") && !currentStyle.contains("-fx-background-color: #c9b458")) {
-                    // Grau für nicht vorhandene Buchstaben, aber nur wenn weder grün noch gelb
-                    keyButton.setStyle("-fx-background-color: #787c7e; -fx-background-radius: 5; -fx-text-fill: white; -fx-font-weight: bold;");
+                JButton keyButton = keyboardButtons.get(c);
+                if (keyButton == null) continue;
+                
+                Color currentBg = keyButton.getBackground();
+                if (currentBg.equals(CheckAlgo.COLOR_GREEN)) continue;
+                
+                if (colors[i].equals(CheckAlgo.COLOR_GREEN)) {
+                    keyButton.setBackground(CheckAlgo.COLOR_GREEN);
+                    keyButton.setForeground(Color.WHITE);
+                } else if (colors[i].equals(CheckAlgo.COLOR_YELLOW) && !currentBg.equals(CheckAlgo.COLOR_GREEN)) {
+                    keyButton.setBackground(CheckAlgo.COLOR_YELLOW);
+                    keyButton.setForeground(Color.WHITE);
+                } else if (colors[i].equals(CheckAlgo.COLOR_GRAY) && !currentBg.equals(CheckAlgo.COLOR_GREEN) && !currentBg.equals(CheckAlgo.COLOR_YELLOW)) {
+                    keyButton.setBackground(CheckAlgo.COLOR_GRAY);
+                    keyButton.setForeground(Color.WHITE);
                 }
             }
         }
-
-        // Methode zur Evaluierung der Eingabe des Nutzers
+        
         private boolean checkInput(String input) {
             if (input == null || input.length() != 5) {
                 return false;
             }
-
+            
             String normalizedInput = input.toUpperCase();
-
-            boolean isValid = Wortliste.isInWordList(normalizedInput);
-            if (!isValid) {
-                return false;
-            }
-            return true;
+            return Wortliste.isInWordList(normalizedInput);
         }
-
+        
         private void processValidInput(String normalizedInput) {
-            // Hier kommt der Rest deiner ursprünglichen checkInput Logik
             final int rowToCheck = currentRow - 1;
             
-            // Wort überprüfen und Farben bestimmen
             Color[] colors = CheckAlgo.checkWord(normalizedInput, targetWord);
-            
-            // Prüfen, ob alle Farben grün sind (Wort erraten)
-            boolean allCorrect = Arrays.stream(colors).allMatch(color -> color.equals(Color.web("#6aaa64")));
-
-            // Animation für das schrittweise Aufdecken der Ergebnisse
-            PauseTransition initialPause = new PauseTransition(Duration.millis(200));
-            initialPause.setOnFinished(_ -> {
-                // Sequenz von Animationen erstellen, die nacheinander abgespielt werden
-                SequentialTransition sequence = new SequentialTransition();
-
-                for (int col = 0; col < 5; col++) {
-                    // Animation für jeden Buchstaben erstellen
-                    SequentialTransition cellAnimation = createCellAnimation(rowToCheck, col, colors[col]);
-                    sequence.getChildren().add(cellAnimation);
+            boolean allCorrect = true;
+            for (Color color : colors) {
+                if (!color.equals(CheckAlgo.COLOR_GREEN)) {
+                    allCorrect = false;
+                    break;
                 }
-
-                // Nach Abschluss aller Animationen Spielstatus prüfen
-                sequence.setOnFinished(_ -> {
-                    // Tastatur-Farben aktualisieren
+            }
+            
+            // Animation für Zellen
+            Timer animationTimer = new Timer(200, null);
+            final int[] currentCol = {0};
+            final boolean finalAllCorrect = allCorrect;
+            
+            animationTimer.addActionListener(e -> {
+                if (currentCol[0] < 5) {
+                    animateCellReveal(rowToCheck, currentCol[0], colors[currentCol[0]]);
+                    currentCol[0]++;
+                } else {
+                    animationTimer.stop();
+                    
+                    // Tastatur aktualisieren
                     updateKeyboard(normalizedInput, colors);
-
-                    // Im Challenge-Modus falsche Buchstaben zur incorrectLetters-Collection hinzufügen
+                    
+                    // Challenge-Modus: falsche Buchstaben merken
                     if (withTimer) {
                         for (int i = 0; i < normalizedInput.length(); i++) {
-                            // Wenn die Farbe grau ist (#787c7e), ist der Buchstabe nicht im Zielwort enthalten
-                            if (colors[i].equals(Color.web("#787c7e"))) {
+                            if (colors[i].equals(CheckAlgo.COLOR_GRAY)) {
                                 incorrectLetters.add(normalizedInput.charAt(i));
                             }
                         }
                     }
-
-                    // Prüfen, ob gewonnen oder verloren
-                    if (allCorrect) {
+                    
+                    // Gewinn/Verlust prüfen
+                    if (finalAllCorrect) {
                         showWonDialog(targetWord, rowToCheck + 1);
                     } else if (rowToCheck + 1 >= rows) {
                         showLostDialog("Leider verloren! Das Wort war: " + targetWord);
                     }
-                });
-
-                sequence.play();
+                }
             });
-            initialPause.play();
+            animationTimer.setInitialDelay(200);
+            animationTimer.start();
         }
-
-        // Methode, die die komplette Animation für eine Zelle erstellt und zurückgibt
-        private SequentialTransition createCellAnimation(int row, int col, Color color) {
-            Label cell = getCellAt(row, col);
-            SequentialTransition st = new SequentialTransition();
-
-            if (cell == null) return st; // Sicherheitsprüfung
-
-            // Erste Rotation (umdrehen)
-            RotateTransition rotateOut = new RotateTransition(Duration.millis(250), cell);
-            rotateOut.setAxis(Rotate.X_AXIS);
-            rotateOut.setFromAngle(0);
-            rotateOut.setToAngle(90);
-
-            // Pause in der Mitte zum Ändern der Farbe
-            PauseTransition colorPause = getColorPause(color, cell);
-
-            // Zweite Rotation (zurückdrehen)
-            RotateTransition rotateIn = new RotateTransition(Duration.millis(250), cell);
-            rotateIn.setAxis(Rotate.X_AXIS);
-            rotateIn.setFromAngle(90);
-            rotateIn.setToAngle(0);
-
-            // Alle Teile zur Sequenz hinzufügen
-            st.getChildren().addAll(rotateOut, colorPause, rotateIn);
-            return st;
+        
+        private void animateCellReveal(int row, int col, Color color) {
+            JLabel cell = getCellAt(row, col);
+            if (cell != null) {
+                // Einfache Farbanimation ohne komplexe 3D-Rotation
+                Timer colorTimer = new Timer(250, e -> {
+                    cell.setBackground(color);
+                    cell.setBorder(new LineBorder(color, 2));
+                    cell.setForeground(Color.WHITE);
+                });
+                colorTimer.setRepeats(false);
+                colorTimer.start();
+            }
         }
-
-        // Überschreiben der addLetter-Methode für Challenge-Modus und Animations-Unterstützung
+        
         @Override
         public void addLetter(String letter) {
-            // Im Challenge-Modus keine falschen Buchstaben zulassen
             if (withTimer && incorrectLetters.contains(letter.charAt(0))) {
-                return; // Buchstabe nicht hinzufügen
+                return;
             }
-
-            // Prüfen, ob wir tatsächlich einen Buchstaben hinzufügen können
+            
             if (currentCol < 5 && currentRow < rows) {
-                // Buchstaben in die Zelle setzen
                 setLetter(currentRow, currentCol, letter);
-                // Animation für das Hinzufügen
-                animateLetterAdd(currentRow, currentCol);
-                // Spaltenindex erhöhen *nach* dem Setzen und Animieren
                 currentCol++;
-                // Nächstes Feld hervorheben (oder keins, wenn Zeile voll)
                 highlightCurrentCell();
-                // Fokus sicherstellen, damit Tastatureingaben weiter funktionieren
-                Platform.runLater(() -> parentStage.getScene().getRoot().requestFocus());
             }
         }
-
+        
         @Override
         public void removeLetter() {
-            // Prüfen, ob überhaupt ein Buchstabe gelöscht werden kann
-            if (currentCol > 0 && currentRow < rows) { // Sicherstellen, dass wir nicht außerhalb des Rasters sind
-                // Spaltenindex verringern *bevor* die Zelle bearbeitet wird
+            if (currentCol > 0 && currentRow < rows) {
                 currentCol--;
-                // Buchstaben aus der Zelle entfernen
                 setLetter(currentRow, currentCol, "");
-                // Aktuelles (jetzt leeres) Feld hervorheben
                 highlightCurrentCell();
-                // Fokus sicherstellen, damit Tastatureingaben weiter funktionieren
-                Platform.runLater(() -> parentStage.getScene().getRoot().requestFocus());
             }
         }
-
-        // Methode für die Animation beim Hinzufügen eines Buchstabens
-        private void animateLetterAdd(int row, int col) {
-            Label cell = getCellAt(row, col);
-            if (cell != null) {
-                // Skalierungsanimation (Pop-Effekt)
-                ScaleTransition st = new ScaleTransition(Duration.millis(100), cell);
-                st.setFromX(0.8);
-                st.setFromY(0.8);
-                st.setToX(1.0);
-                st.setToY(1.0);
-                st.play();
-            }
-        }
-
-        // Methode zum Überprüfen der aktuellen Eingabe (nach Enter)
+        
         public void submitCurrentInput() {
-            // Nur prüfen, wenn die Zeile voll ist
             if (currentCol == 5 && currentRow < rows) {
                 StringBuilder sb = new StringBuilder();
                 for (int col = 0; col < 5; col++) {
                     sb.append(getLetterAt(currentRow, col));
                 }
                 String input = sb.toString();
-
-
-                // Zeile inkrementieren und Spalte zurücksetzen
+                
                 if (checkInput(input)) {
                     currentRow++;
                     currentCol = 0;
                     processValidInput(input);
                 }
-
-                // Nächstes Feld hervorheben
+                
                 highlightCurrentCell();
             }
         }
-
-        // Methode zum Einrichten des Timers für den Challenge-Modus
+        
         private void setupTimer() {
-            // Timer-Label erstellen und hinzufügen
-            timerLabel = new Label();
-            timerLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
-            timerLabel.setAlignment(Pos.CENTER);
-            timerLabel.setPadding(new Insets(5, 0, 10, 0)); // Abstand nach unten
-
-            // Timer-Label über dem Spielfeld hinzufügen
-            // Annahme: Das GameField ist in einem VBox-Container
-            if (this.getParent() instanceof VBox parentVBox) {
-                parentVBox.getChildren().addFirst(timerLabel); // An erster Stelle einfügen
-            } else {
-                // Fallback, falls die Struktur anders ist
-                this.getChildren().addFirst(timerLabel);
-            }
-
-            // Timer initialisieren
-            secondsRemaining = Variables.timerSeconds; // Zeit aus globalen Variablen holen
+            timerLabel = new JLabel();
+            timerLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            timerLabel.setBorder(new EmptyBorder(5, 0, 10, 0));
+            
+            // Timer Label an erster Stelle einfügen
+            this.add(timerLabel, 0);
+            
+            secondsRemaining = Variables.timerSeconds;
             timerLabel.setText("Verbleibende Zeit: " + formatTime(secondsRemaining));
-
-            timer = new Timeline(new KeyFrame(Duration.seconds(1), _ -> {
+            
+            timer = new Timer(1000, e -> {
                 secondsRemaining--;
                 timerLabel.setText("Verbleibende Zeit: " + formatTime(secondsRemaining));
-
-                // Wenn die Zeit abgelaufen ist
+                
                 if (secondsRemaining <= 0) {
-                    timer.stop(); // Timer stoppen
-                    Platform.runLater(() -> showLostDialog("Die Zeit ist abgelaufen! Das gesuchte Wort war: " + targetWord)); // Dialog für verlorenes Spiel anzeigen
+                    timer.stop();
+                    SwingUtilities.invokeLater(() -> showLostDialog("Die Zeit ist abgelaufen! Das gesuchte Wort war: " + targetWord));
                 }
-            }));
-            timer.setCycleCount(Timeline.INDEFINITE); // Endlos wiederholen
-            timer.play(); // Timer starten
+            });
+            timer.start();
         }
-
-        // Methode zum Formatieren der Zeit als mm:ss
+        
         private String formatTime(int totalSeconds) {
-            if (totalSeconds < 0) totalSeconds = 0; // Negative Zeit verhindern
+            if (totalSeconds < 0) totalSeconds = 0;
             int minutes = totalSeconds / 60;
             int seconds = totalSeconds % 60;
-            return String.format("%02d:%02d", minutes, seconds); // Formatierung mit führenden Nullen
+            return String.format("%02d:%02d", minutes, seconds);
         }
-
+        
         private void showWonDialog(String targetWord, int rowsUsed) {
             if (timer != null) {
-                timer.stop(); // Timer anhalten bei Gewinn
+                timer.stop();
             }
-            Alert alert = getAlert("Gewonnen!", "Glückwunsch! Du hast das Wort '" + targetWord + "' in " + rowsUsed + (rowsUsed == 1 ? " Versuch" : " Versuchen") + " erraten.");
-
-            // Dialog in einer separaten UI-Aktualisierung anzeigen
-            Platform.runLater(() -> {
-                alert.showAndWait();
-                // Nach dem Schließen des Dialogs zum Hauptmenü zurückkehren
-                uiReference.showMainMenu(parentStage);
+            
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(mainFrame,
+                        "Glückwunsch! Du hast das Wort '" + targetWord + "' in " + rowsUsed + (rowsUsed == 1 ? " Versuch" : " Versuchen") + " erraten.",
+                        "Gewonnen!",
+                        JOptionPane.INFORMATION_MESSAGE);
+                uiReference.showMainMenu();
             });
         }
-
-        // Hilfsmethode zum Erstellen eines Standard-Alert-Dialogs
-        private Alert getAlert(String title, String content) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle(title);
-            alert.setHeaderText(null); // Keinen Header-Text
-            alert.setContentText(content);
-
-            // Icon für den Dialog setzen (optional)
-            Stage alertStage = (Stage) alert.getDialogPane().getScene().getWindow();
-            setStageIcon(alertStage); // Wiederverwenden der Icon-Setz-Methode
-
-            return alert;
-        }
-
-        // Dialog anzeigen, wenn das Spiel verloren wurde (keine Versuche mehr oder Zeit abgelaufen)
+        
         private void showLostDialog(String message) {
             if (timer != null) {
                 timer.stop();
             }
-
-            Alert alert = getAlert("Verloren!", message);
-            Platform.runLater(() -> {
-                alert.showAndWait();
-                uiReference.showMainMenu(parentStage);
+            
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(mainFrame,
+                        message,
+                        "Verloren!",
+                        JOptionPane.INFORMATION_MESSAGE);
+                uiReference.showMainMenu();
             });
         }
     }

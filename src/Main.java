@@ -3,18 +3,21 @@
 // Autoren: Lennart und Moritz
 
 package src;
-import javafx.application.Application;
+import javax.swing.SwingUtilities;
 
 /*
     Über diese Klasse:
-    Die Main-Klasse ist der Einstiegspunkt für die JavaFX-Anwendung.
+    Die Main-Klasse ist der Einstiegspunkt für die Java Swing-Anwendung.
     Sie startet die Anwendung und zeigt das Hauptfenster an.
 */
 
 public class Main {
     public static void main(String[] args) {
-        // Die JavaFX-Anwendung wird gestartet
+        // Die Swing-Anwendung wird gestartet
         // Die UI-Klasse ist hierbei die Hauptklasse, das sie die Darstellung der Anwendung beinhaltet
-        Application.launch(UI.class, args);
+        SwingUtilities.invokeLater(() -> {
+            UI ui = new UI();
+            ui.start();
+        });
     }
 }
