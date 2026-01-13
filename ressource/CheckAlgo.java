@@ -4,7 +4,7 @@
 
 package ressource;
 
-import javafx.scene.paint.Color;
+import java.awt.Color;
 
 /*
     Über diese Klasse:
@@ -17,6 +17,11 @@ import javafx.scene.paint.Color;
 */
 
 public class CheckAlgo {
+    // Farbkonstanten für Wordle
+    public static final Color COLOR_GREEN = new Color(106, 170, 100);  // #6aaa64
+    public static final Color COLOR_YELLOW = new Color(201, 180, 88);  // #c9b458
+    public static final Color COLOR_GRAY = new Color(120, 124, 126);   // #787c7e
+    
     // Methode checkWord(), die das eingegebene Wort mit dem gesuchten Wort vergleicht
     // Sie gibt ein Array von Farben zurück, das den Status der Übereinstimmung anzeigt
     public static Color[] checkWord(String input, String targetWord) {
@@ -36,16 +41,16 @@ public class CheckAlgo {
         // Erster Durchgang der Überprüfung: Finden von exakten Übereinstimmungen → Grün als Hintergrund markieren
         for (int i = 0; i < wordLength; i++) {
             if (i < input.length() && input.charAt(i) == targetWord.charAt(i)) {
-                colors[i] = Color.web("#6aaa64"); // Grün für richtige Position
+                colors[i] = COLOR_GREEN; // Grün für richtige Position
                 usedInTargetWord[i] = true;
             } else {
-                colors[i] = Color.web("#787c7e"); // Grau für falsche Buchstaben
+                colors[i] = COLOR_GRAY; // Grau für falsche Buchstaben
             }
         }
 
         // Zweiter Durchgang: Finden vom Buchstaben an falscher Position (gelb)
         for (int i = 0; i < input.length() && i < wordLength; i++) {
-            if (colors[i].equals(Color.web("#6aaa64"))) {
+            if (colors[i].equals(COLOR_GREEN)) {
                 continue; // Bereits als korrekt markiert
             }
 
@@ -55,7 +60,7 @@ public class CheckAlgo {
             // Suche nach diesem Buchstaben im Zielwort
             for (int j = 0; j < wordLength; j++) {
                 if (!usedInTargetWord[j] && targetWord.charAt(j) == letters) {
-                    colors[i] = Color.web("#c9b458"); // Gelb für richtige Buchstaben an falscher Stelle
+                    colors[i] = COLOR_YELLOW; // Gelb für richtige Buchstaben an falscher Stelle
                     usedInTargetWord[j] = true;
                     lettersFound = true;
                     break;
@@ -63,7 +68,7 @@ public class CheckAlgo {
             }
 
             if (!lettersFound) {
-                colors[i] = Color.web("#787c7e"); // Grau für nicht vorkommende Buchstaben
+                colors[i] = COLOR_GRAY; // Grau für nicht vorkommende Buchstaben
             }
         }
 

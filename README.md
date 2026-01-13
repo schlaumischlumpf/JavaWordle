@@ -1,6 +1,6 @@
-# Wordle in JavaFX
+# Wordle in Java Swing
 
-WordleFX ist eine Desktop-Anwendung, die das populäre Wortspiel Wordle imitiert. Die Applikation wurde dabei in JavaFX
+WordleFX ist eine Desktop-Anwendung, die das populäre Wortspiel Wordle imitiert. Die Applikation wurde dabei in Java Swing
 programmiert und offeriert dem Benutzer drei Spielmodi: Normal, Schwer sowie einen Challengemodus, der einen Timer
 beinhaltet.
 
@@ -25,7 +25,6 @@ beinhaltet.
 ## Anforderungen
 
 - Java 17 oder höher
-- optional: JavaFX 19 oder höher
 
 ## Installation
 
@@ -35,10 +34,12 @@ Das Projekt kann installiert werden, indem das Repository geklont wird.
  git clone https://github.com/schlaumischlumpf/JavaWordle.git
 ```
 
-Anschließend kann die Anwendung mit der Ausführungsdatei `Wordle.jar` gestartet werden. Diese befindet sich im Ordner
-`out/artifacts/WordleJava2_jar` des Projekts.
-Hierfür wird keine JavaFX Installation benötigt, da die benötigten JavaFX-Bibliotheken bereits in der JAR-Datei
-enthalten sind.
+Anschließend kann die Anwendung kompiliert und gestartet werden:
+
+```
+javac -d build src/Main.java src/UI.java ressource/*.java
+java -cp build:. src.Main
+```
 
 ## Debug-Tool
 

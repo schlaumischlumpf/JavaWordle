@@ -1,42 +1,34 @@
 package ressource;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.util.Duration;
-import javafx.application.Platform;
-
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.List;
 import java.util.function.Consumer;
-
 
 public class Debug {
     private static final List<Character> usedLetters = new ArrayList<>();
     private static final String STATS_FILE = "ressource/debug_stats.txt";
     private static final Map<String, Integer> statistics = new HashMap<>();
-    private static Stage debugStage;
-    private static Label wordLabel;
-    private static Label lettersLabel;
-    private static Label timerLabel;
+    private static JFrame debugFrame;
+    private static JLabel wordLabel;
+    private static JLabel lettersLabel;
+    private static JLabel timerLabel;
     private static Consumer<String> wordChangeCallback;
     private static Runnable restartGameCallback;
     private static Runnable undoLastInputCallback;
-    private static Timeline timer;
+    private static Timer timer;
     private static int seconds = 0;
-    private static CheckBox showWordCheckBox;
+    private static JCheckBox showWordCheckBox;
     private static String currentTargetWord;
 
     /**
@@ -48,18 +40,15 @@ public class Debug {
         wordChangeCallback = changeWordCallback;
         restartGameCallback = restartCallback;
         undoLastInputCallback = undoCallback;
-
-        // Store the target word so it can be used inside runLater
         currentTargetWord = targetWord;
 
-        if (debugStage == null) {
-            // Use Platform.runLater to ensure UI operations run on JavaFX Application Thread
-            Platform.runLater(() -> createDebugWindow(targetWord));
+        if (debugFrame == null) {
+            SwingUtilities.invokeLater(() -> createDebugWindow(targetWord));
         } else {
-            Platform.runLater(() -> {
+            SwingUtilities.invokeLater(() -> {
                 updateDebugInfo(targetWord);
-                if (!debugStage.isShowing()) {
-                    debugStage.show();
+                if (!debugFrame.isVisible()) {
+                    debugFrame.setVisible(true);
                 }
             });
         }
@@ -75,7 +64,6 @@ public class Debug {
 
     private static void updateLettersLabel() {
         if (lettersLabel != null) {
-            // Liste kopieren und alphabetisch sortieren
             List<Character> sortedLetters = new ArrayList<>(usedLetters);
             Collections.sort(sortedLetters);
 
@@ -90,10 +78,10 @@ public class Debug {
         }
     }
 
-    private static void setStageIcon(Stage stage) {
+    private static void setFrameIcon(JFrame frame) {
         try {
-            Image icon = new Image(Objects.requireNonNull(Debug.class.getResourceAsStream("/ressource/logo.png")));
-            stage.getIcons().add(icon);
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(Debug.class.getResource("/ressource/logo.png")));
+            frame.setIconImage(icon.getImage());
         } catch (Exception e) {
             System.err.println("Logo konnte nicht geladen werden: " + e.getMessage());
         }
@@ -107,12 +95,11 @@ public class Debug {
         seconds = 0;
         updateTimerLabel();
 
-        timer = new Timeline(new KeyFrame(Duration.seconds(1), _ -> {
+        timer = new Timer(1000, e -> {
             seconds++;
             updateTimerLabel();
-        }));
-        timer.setCycleCount(Animation.INDEFINITE);
-        timer.play();
+        });
+        timer.start();
     }
 
     private static void updateTimerLabel() {
@@ -162,7 +149,6 @@ public class Debug {
      * Prüft, ob ein Wort gültig ist
      */
     private static boolean checkWordValidity(String word) {
-        // Lokale Liste mit vielen deutschen Substantiven
         try {
             InputStream inputStream = Debug.class.getResourceAsStream("/ressource/wordlist.txt");
             if (inputStream != null) {
@@ -182,7 +168,6 @@ public class Debug {
         return false;
     }
 
-    // Methode, mit der das Lösungswort angezeigt/ausgeblendet werden kann
     private static void updateWordVisibility() {
         if (wordLabel != null && currentTargetWord != null) {
             if (showWordCheckBox.isSelected()) {
@@ -194,181 +179,239 @@ public class Debug {
     }
 
     private static void createDebugWindow(String targetWord) {
-        // Buchstaben zurücksetzen
         resetUsedLetters();
         currentTargetWord = targetWord;
 
-        debugStage = new Stage();
-        debugStage.setTitle("Wordle Debug-Tool");
-        debugStage.initStyle(StageStyle.DECORATED);
+        debugFrame = new JFrame("Wordle Debug-Tool");
+        setFrameIcon(debugFrame);
+        debugFrame.setSize(400, 300);
+        debugFrame.setMinimumSize(new Dimension(400, 300));
 
-        // Icon hinzufügen
-        setStageIcon(debugStage);
-
-        debugStage.setWidth(400);
-        debugStage.setHeight(300);
-        debugStage.setMinWidth(400);
-        debugStage.setMinHeight(300);
-
-        TabPane tabPane = new TabPane();
+        JTabbedPane tabPane = new JTabbedPane();
 
         // Tab 1: Spielinfo
-        Tab infoTab = new Tab("Spielinfo");
-        infoTab.setClosable(false);
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        VBox infoContent = new VBox(10);
-        infoContent.setPadding(new Insets(10));
+        wordLabel = new JLabel("Lösungswort: *****");
+        wordLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        wordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        wordLabel = new Label("Lösungswort: *****");
-        wordLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
-
-        // Möglichkeit, Lösungswort mit Checkbox einzublenden
-        showWordCheckBox = new CheckBox("Lösungswort anzeigen");
+        showWordCheckBox = new JCheckBox("Lösungswort anzeigen");
         showWordCheckBox.setSelected(false);
-        showWordCheckBox.setOnAction(_ -> updateWordVisibility());
+        showWordCheckBox.addActionListener(e -> updateWordVisibility());
+        showWordCheckBox.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        lettersLabel = new Label("Genutzte Buchstaben: ");
-        lettersLabel.setFont(Font.font("Segoe UI", 14));
+        lettersLabel = new JLabel("Genutzte Buchstaben: ");
+        lettersLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lettersLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Timer Label hinzufügen
-        timerLabel = new Label("Spielzeit: 0:00");
-        timerLabel.setFont(Font.font("Segoe UI", 14));
+        timerLabel = new JLabel("Spielzeit: 0:00");
+        timerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        timerLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Button-Leiste mit Restart und Undo
-        HBox buttonBox = new HBox(10);
-        buttonBox.setAlignment(Pos.CENTER);
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
+        buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 
-        Button restartButton = new Button("Spiel neu starten");
-        restartButton.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(restartButton, Priority.ALWAYS);
+        JButton restartButton = new JButton("Spiel neu starten");
+        JButton undoButton = new JButton("Letzte Eingabe löschen");
 
-        Button undoButton = new Button("Letzte Eingabe löschen");
-        undoButton.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(undoButton, Priority.ALWAYS);
-
-        buttonBox.getChildren().addAll(restartButton, undoButton);
-
-        restartButton.setOnAction(_ -> {
+        restartButton.addActionListener(e -> {
             resetUsedLetters();
-            startTimer(); // Timer neu starten
+            startTimer();
             incrementStat("restarts");
             if (restartGameCallback != null) {
                 restartGameCallback.run();
             }
         });
 
-        undoButton.setOnAction(_ -> {
+        undoButton.addActionListener(e -> {
             if (undoLastInputCallback != null) {
                 undoLastInputCallback.run();
                 incrementStat("undos");
             }
         });
 
-        infoContent.getChildren().addAll(wordLabel, showWordCheckBox, lettersLabel, timerLabel, buttonBox);
-        infoTab.setContent(infoContent);
+        buttonPanel.add(restartButton);
+        buttonPanel.add(undoButton);
+
+        infoPanel.add(wordLabel);
+        infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(showWordCheckBox);
+        infoPanel.add(Box.createVerticalStrut(10));
+        infoPanel.add(lettersLabel);
+        infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(timerLabel);
+        infoPanel.add(Box.createVerticalStrut(15));
+        infoPanel.add(buttonPanel);
+        infoPanel.add(Box.createVerticalGlue());
+
+        tabPane.addTab("Spielinfo", infoPanel);
 
         // Tab 2: Wort ändern
-        Tab changeWordTab = new Tab("Wort ändern");
-        changeWordTab.setClosable(false);
+        JPanel changeWordPanel = new JPanel();
+        changeWordPanel.setLayout(new BoxLayout(changeWordPanel, BoxLayout.Y_AXIS));
+        changeWordPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        VBox changeWordContent = new VBox(10);
-        changeWordContent.setPadding(new Insets(10));
+        JLabel instructionLabel = new JLabel("Neues Lösungswort (5 Buchstaben):");
+        instructionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JTextField wordField = new JTextField();
+        wordField.setMaximumSize(new Dimension(200, 25));
+        wordField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        Label instructionLabel = new Label("Neues Lösungswort (5 Buchstaben):");
-        TextField wordField = new TextField();
-        wordField.setMaxWidth(200);
+        JButton changeWordButton = new JButton("Wort ändern");
+        changeWordButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        changeWordButton.addActionListener(e -> {
+            String newWord = wordField.getText().toUpperCase().trim();
+            if (newWord.length() == 5) {
+                if (wordChangeCallback != null) {
+                    wordChangeCallback.accept(newWord);
+                    wordLabel.setText("Lösungswort: " + (showWordCheckBox.isSelected() ? newWord : "*****"));
+                    currentTargetWord = newWord;
+                    wordField.setText("");
+                    incrementStat("wordChanges");
+                }
+            } else {
+                JOptionPane.showMessageDialog(debugFrame,
+                        "Das Wort muss genau 5 Buchstaben lang sein.",
+                        "Fehler",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
 
-        Button changeWordButton = getChangeWordButton(wordField);
+        changeWordPanel.add(instructionLabel);
+        changeWordPanel.add(Box.createVerticalStrut(10));
+        changeWordPanel.add(wordField);
+        changeWordPanel.add(Box.createVerticalStrut(10));
+        changeWordPanel.add(changeWordButton);
+        changeWordPanel.add(Box.createVerticalGlue());
 
-        changeWordContent.getChildren().addAll(instructionLabel, wordField, changeWordButton);
-        changeWordTab.setContent(changeWordContent);
+        tabPane.addTab("Wort ändern", changeWordPanel);
 
         // Tab 3: Wörterbuch
-        Tab dictionaryTab = new Tab("Wörterbuch");
-        dictionaryTab.setClosable(false);
+        JPanel dictionaryPanel = new JPanel();
+        dictionaryPanel.setLayout(new BoxLayout(dictionaryPanel, BoxLayout.Y_AXIS));
+        dictionaryPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        VBox dictionaryContent = new VBox(10);
-        dictionaryContent.setPadding(new Insets(10));
+        JLabel dictionaryLabel = new JLabel("Wörterbuch-Prüfung");
+        dictionaryLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        dictionaryLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        Label dictionaryLabel = new Label("Wörterbuch-Prüfung");
-        dictionaryLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        JTextField wordCheckField = new JTextField();
+        wordCheckField.setMaximumSize(new Dimension(200, 25));
+        wordCheckField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        TextField wordCheckField = new TextField();
-        wordCheckField.setPromptText("Wort eingeben");
-        wordCheckField.setMaxWidth(200);
-
-        Button checkWordButton = new Button("Wort prüfen");
-        TextArea resultArea = new TextArea();
+        JButton checkWordButton = new JButton("Wort prüfen");
+        checkWordButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JTextArea resultArea = new JTextArea(5, 20);
         resultArea.setEditable(false);
-        resultArea.setPrefRowCount(5);
-        resultArea.setWrapText(true);
+        resultArea.setLineWrap(true);
+        resultArea.setWrapStyleWord(true);
+        JScrollPane resultScroll = new JScrollPane(resultArea);
+        resultScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        resultScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        checkWordButton.setOnAction(_ -> {
+        checkWordButton.addActionListener(e -> {
             String word = wordCheckField.getText().trim();
             if (!word.isEmpty()) {
                 resultArea.setText("Prüfe Wort '" + word + "'...");
                 boolean isValid = checkWordValidity(word);
                 resultArea.setText("Das Wort '" + word + "' ist " +
                         (isValid ? "gültig ✓" : "ungültig ✗"));
-
                 incrementStat("wordChecks");
             }
         });
 
-        dictionaryContent.getChildren().addAll(dictionaryLabel, wordCheckField, checkWordButton, resultArea);
-        dictionaryTab.setContent(dictionaryContent);
+        dictionaryPanel.add(dictionaryLabel);
+        dictionaryPanel.add(Box.createVerticalStrut(10));
+        dictionaryPanel.add(wordCheckField);
+        dictionaryPanel.add(Box.createVerticalStrut(10));
+        dictionaryPanel.add(checkWordButton);
+        dictionaryPanel.add(Box.createVerticalStrut(10));
+        dictionaryPanel.add(resultScroll);
+        dictionaryPanel.add(Box.createVerticalGlue());
+
+        tabPane.addTab("Wörterbuch", dictionaryPanel);
 
         // Tab 4: Statistik
-        Tab statsTab = new Tab("Statistik");
-        statsTab.setClosable(false);
+        JPanel statsPanel = new JPanel();
+        statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
+        statsPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        VBox statsContent = new VBox(10);
-        statsContent.setPadding(new Insets(10));
+        JLabel statsHeader = new JLabel("Debug-Tool Statistiken");
+        statsHeader.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        statsHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        Label statsHeader = new Label("Debug-Tool Statistiken");
-        statsHeader.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-        TextArea statsArea = new TextArea();
+        JTextArea statsArea = new JTextArea(8, 20);
         statsArea.setEditable(false);
-        statsArea.setPrefRowCount(8);
+        JScrollPane statsScroll = new JScrollPane(statsArea);
+        statsScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
+        statsScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        Button refreshStatsButton = getRefreshStatsButton(statsArea);
+        JButton refreshStatsButton = new JButton("Statistiken aktualisieren");
+        refreshStatsButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        refreshStatsButton.addActionListener(e -> {
+            loadStatistics();
+            String sb = "Neustarts: " + statistics.getOrDefault("restarts", 0) + "\n" +
+                    "Rückgängig gemachte Eingaben: " + statistics.getOrDefault("undos", 0) + "\n" +
+                    "Wortänderungen: " + statistics.getOrDefault("wordChanges", 0) + "\n" +
+                    "Wortprüfungen: " + statistics.getOrDefault("wordChecks", 0) + "\n" +
+                    "Debug-Sitzungen: " + statistics.getOrDefault("sessions", 0) + "\n";
+            statsArea.setText(sb);
+        });
 
-        Button resetStatsButton = new Button("Statistiken zurücksetzen");
-        resetStatsButton.setOnAction(_ -> {
+        JButton resetStatsButton = new JButton("Statistiken zurücksetzen");
+        resetStatsButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        resetStatsButton.addActionListener(e -> {
             statistics.clear();
             saveStatistics();
             statsArea.setText("Alle Statistiken wurden zurückgesetzt.");
         });
 
-        statsContent.getChildren().addAll(statsHeader, statsArea, refreshStatsButton, resetStatsButton);
-        statsTab.setContent(statsContent);
+        statsPanel.add(statsHeader);
+        statsPanel.add(Box.createVerticalStrut(10));
+        statsPanel.add(statsScroll);
+        statsPanel.add(Box.createVerticalStrut(10));
+        statsPanel.add(refreshStatsButton);
+        statsPanel.add(Box.createVerticalStrut(5));
+        statsPanel.add(resetStatsButton);
+        statsPanel.add(Box.createVerticalGlue());
+
+        tabPane.addTab("Statistik", statsPanel);
 
         // Tab 5: Hilfe & Tipps
-        Tab hintTab = new Tab("Hilfe & Tipps");
-        hintTab.setClosable(false);
+        JPanel hintPanel = new JPanel();
+        hintPanel.setLayout(new BoxLayout(hintPanel, BoxLayout.Y_AXIS));
+        hintPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        VBox hintContent = new VBox(10);
-        hintContent.setPadding(new Insets(10));
+        JLabel hintLabel = new JLabel("Hilfe zum Lösungswort:");
+        hintLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        hintLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        Label hintLabel = new Label("Hilfe zum Lösungswort:");
-        hintLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        JButton showFirstLetterButton = new JButton("Ersten Buchstaben anzeigen");
+        showFirstLetterButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JButton analyzeWordButton = new JButton("Wortanalyse anzeigen");
+        analyzeWordButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        Button showFirstLetterButton = new Button("Ersten Buchstaben anzeigen");
-        Button analyzeWordButton = new Button("Wortanalyse anzeigen");
-
-        TextArea hintTextArea = new TextArea();
+        JTextArea hintTextArea = new JTextArea(5, 20);
         hintTextArea.setEditable(false);
-        hintTextArea.setPrefRowCount(5);
-        hintTextArea.setWrapText(true);
+        hintTextArea.setLineWrap(true);
+        hintTextArea.setWrapStyleWord(true);
+        JScrollPane hintScroll = new JScrollPane(hintTextArea);
+        hintScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        hintScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        showFirstLetterButton.setOnAction(_ -> {
+        showFirstLetterButton.addActionListener(e -> {
             if (currentTargetWord != null && !currentTargetWord.isEmpty()) {
                 hintTextArea.setText("Der erste Buchstabe des Lösungswortes ist: " + currentTargetWord.charAt(0));
             }
         });
 
-        analyzeWordButton.setOnAction(_ -> {
+        analyzeWordButton.addActionListener(e -> {
             if (currentTargetWord != null && !currentTargetWord.isEmpty()) {
                 int vowels = 0;
                 for (char c : currentTargetWord.toCharArray()) {
@@ -383,67 +426,35 @@ public class Debug {
             }
         });
 
-        hintContent.getChildren().addAll(hintLabel, showFirstLetterButton, analyzeWordButton, hintTextArea);
-        hintTab.setContent(hintContent);
+        hintPanel.add(hintLabel);
+        hintPanel.add(Box.createVerticalStrut(10));
+        hintPanel.add(showFirstLetterButton);
+        hintPanel.add(Box.createVerticalStrut(5));
+        hintPanel.add(analyzeWordButton);
+        hintPanel.add(Box.createVerticalStrut(10));
+        hintPanel.add(hintScroll);
+        hintPanel.add(Box.createVerticalGlue());
 
-        tabPane.getTabs().addAll(infoTab, changeWordTab, dictionaryTab, statsTab, hintTab);
+        tabPane.addTab("Hilfe & Tipps", hintPanel);
 
-        Scene scene = new Scene(tabPane, 350, 350);
-        debugStage.setScene(scene);
-        debugStage.setAlwaysOnTop(true);
+        debugFrame.add(tabPane);
+        debugFrame.setAlwaysOnTop(true);
 
-        debugStage.setOnCloseRequest(e -> {
-            debugStage.hide();
-            e.consume();
-        });
-
-        // Statistik für neue Sitzung erhöhen
-        incrementStat("sessions");
-        // Timer starten
-        startTimer();
-        // Refresh Statistiken
-        refreshStatsButton.fire();
-
-        debugStage.show();
-    }
-
-    private static Button getRefreshStatsButton(TextArea statsArea) {
-        Button refreshStatsButton = new Button("Statistiken aktualisieren");
-        refreshStatsButton.setOnAction(_ -> {
-            loadStatistics();
-            String sb = "Neustarts: " + statistics.getOrDefault("restarts", 0) + "\n" +
-                    "Rückgängig gemachte Eingaben: " + statistics.getOrDefault("undos", 0) + "\n" +
-                    "Wortänderungen: " + statistics.getOrDefault("wordChanges", 0) + "\n" +
-                    "Wortprüfungen: " + statistics.getOrDefault("wordChecks", 0) + "\n" +
-                    "Debug-Sitzungen: " + statistics.getOrDefault("sessions", 0) + "\n";
-            statsArea.setText(sb);
-        });
-        return refreshStatsButton;
-    }
-
-    private static Button getChangeWordButton(TextField wordField) {
-        Button changeWordButton = new Button("Wort ändern");
-        changeWordButton.setOnAction(_ -> {
-            String newWord = wordField.getText().toUpperCase().trim();
-            if (newWord.length() == 5) {
-                if (wordChangeCallback != null) {
-                    wordChangeCallback.accept(newWord);
-                    wordLabel.setText("Lösungswort: " + newWord);
-                    wordField.clear();
-                    incrementStat("wordChanges");
-                }
-            } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Fehler");
-                alert.setHeaderText("Ungültige Eingabe");
-                alert.setContentText("Das Wort muss genau 5 Buchstaben lang sein.");
-                alert.showAndWait();
+        debugFrame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                debugFrame.setVisible(false);
             }
         });
-        return changeWordButton;
+
+        incrementStat("sessions");
+        startTimer();
+        refreshStatsButton.doClick();
+
+        debugFrame.setLocationRelativeTo(null);
+        debugFrame.setVisible(true);
     }
 
-    // Aktualisierung der Debuginformationen
     public static void updateDebugInfo(String targetWord) {
         currentTargetWord = targetWord;
         if (wordLabel != null) {
@@ -454,5 +465,4 @@ public class Debug {
             }
         }
     }
-
 }
