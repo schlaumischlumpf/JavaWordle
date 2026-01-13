@@ -96,6 +96,12 @@ public class GameField extends JPanel {
             // Direkte Löschung ohne komplexe Animation für bessere Stabilität
             currentCol--;
             setLetter(currentRow, currentCol, "");
+            
+            // Remove last character from internal text representation
+            if (hiddenInputText.length() > 0) {
+                hiddenInputText.setLength(hiddenInputText.length() - 1);
+            }
+            
             highlightCurrentCell();
 
             // Kurze Verzögerung, um schnelles wiederholtes Löschen zu verhindern
